@@ -8,12 +8,14 @@ import Layout from "../components/Layout";
 
 // Links de checkout da Kiwify — preencher quando disponíveis
 const CHECKOUT_LINKS = {
+  free:         null,
   essencial:    "https://pay.kiwify.com.br/lYlJgbJ",
   profissional: "https://pay.kiwify.com.br/sPy2s6r",
   especialista: "https://pay.kiwify.com.br/YEGJVIK",
 };
 
 const PRECOS = {
+  free:         "Gratuito",
   essencial:    "R$ 197/ano",
   profissional: "R$ 297/ano",
   especialista: "R$ 397/ano",
@@ -111,11 +113,11 @@ export default function AssinaturaPage() {
             <div className="card" style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Ferramentas incluídas no seu plano</div>
               {[
+                { id: "noticias",   label: "Portal de Notícias" },
                 { id: "simulador",  label: "Simulador Tributário" },
                 { id: "fiscal",     label: "Calendário Fiscal" },
                 { id: "cnpj",       label: "Consulta CNPJ" },
                 { id: "documentos", label: "Gerador de Documentos" },
-                { id: "noticias",   label: "Portal de Notícias" },
                 { id: "honorarios", label: "Calculadora de Honorários" },
                 { id: "icmsst",     label: "Calculadora ICMS-ST" },
                 { id: "simulado",   label: "Simulado CFC" },
@@ -175,7 +177,7 @@ export default function AssinaturaPage() {
                       {p.ferramentas.length} ferramenta{p.ferramentas.length > 1 ? "s" : ""} incluída{p.ferramentas.length > 1 ? "s" : ""}
                     </div>
                   </div>
-                  {!atual && (
+                  {!atual && CHECKOUT_LINKS[key] && (
                     <a
                       href={CHECKOUT_LINKS[key]}
                       target="_blank"
@@ -188,7 +190,7 @@ export default function AssinaturaPage() {
                         textDecoration: "none", whiteSpace: "nowrap",
                       }}
                     >
-                      {expirado ? "Assinar" : "Fazer upgrade"} →
+                      Assinar →
                     </a>
                   )}
                 </div>
