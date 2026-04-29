@@ -8,9 +8,15 @@ import Layout from "../components/Layout";
 
 // Links de checkout da Kiwify — preencher quando disponíveis
 const CHECKOUT_LINKS = {
-  essencial:    "#",
-  profissional: "#",
-  especialista: "#",
+  essencial:    "https://pay.kiwify.com.br/lYlJgbJ",
+  profissional: "https://pay.kiwify.com.br/sPy2s6r",
+  especialista: "https://pay.kiwify.com.br/YEGJVIK",
+};
+
+const PRECOS = {
+  essencial:    "R$ 197/ano",
+  profissional: "R$ 297/ano",
+  especialista: "R$ 397/ano",
 };
 
 function diasRestantes(dataExpiracao) {
@@ -160,6 +166,9 @@ export default function AssinaturaPage() {
                           PLANO ATUAL
                         </span>
                       )}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", margin: "6px 0 4px" }}>
+                      {PRECOS[key]}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--muted)" }}>{p.descricao}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
