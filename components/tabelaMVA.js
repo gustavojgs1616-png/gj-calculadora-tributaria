@@ -1,0 +1,40 @@
+export const TABELA_MVA = [
+  { ncm: '2710', descricao: 'Combustíveis e lubrificantes', mva: 30, segmento: 'Combustíveis' },
+  { ncm: '8708', descricao: 'Autopeças em geral', mva: 42, segmento: 'Autopeças' },
+  { ncm: '4011', descricao: 'Pneus novos de borracha', mva: 42, segmento: 'Autopeças' },
+  { ncm: '4012', descricao: 'Pneumáticos recauchutados', mva: 45, segmento: 'Autopeças' },
+  { ncm: '2202', descricao: 'Águas e refrigerantes', mva: 140, segmento: 'Bebidas' },
+  { ncm: '2203', descricao: 'Cerveja de malte', mva: 140, segmento: 'Bebidas' },
+  { ncm: '2208', descricao: 'Aguardente e destilados', mva: 140, segmento: 'Bebidas' },
+  { ncm: '2402', descricao: 'Cigarros e charutos', mva: 30, segmento: 'Cigarros' },
+  { ncm: '2523', descricao: 'Cimento', mva: 20, segmento: 'Construção' },
+  { ncm: '3208', descricao: 'Tintas e vernizes', mva: 35, segmento: 'Construção' },
+  { ncm: '3209', descricao: 'Tintas à base de água', mva: 35, segmento: 'Construção' },
+  { ncm: '6910', descricao: 'Pias, lavatórios e banheiras de cerâmica', mva: 35, segmento: 'Construção' },
+  { ncm: '7214', descricao: 'Barras de ferro ou aço', mva: 38, segmento: 'Construção' },
+  { ncm: '8471', descricao: 'Computadores e periféricos', mva: 40, segmento: 'Eletroeletrônicos' },
+  { ncm: '8517', descricao: 'Telefones e smartphones', mva: 40, segmento: 'Eletroeletrônicos' },
+  { ncm: '8521', descricao: 'Aparelhos de gravação de vídeo', mva: 40, segmento: 'Eletroeletrônicos' },
+  { ncm: '8528', descricao: 'Televisores e monitores', mva: 40, segmento: 'Eletroeletrônicos' },
+  { ncm: '8415', descricao: 'Aparelhos de ar-condicionado', mva: 42, segmento: 'Eletrodomésticos' },
+  { ncm: '8418', descricao: 'Refrigeradores e freezers', mva: 42, segmento: 'Eletrodomésticos' },
+  { ncm: '8450', descricao: 'Máquinas de lavar roupa', mva: 42, segmento: 'Eletrodomésticos' },
+  { ncm: '1901', descricao: 'Preparações alimentícias de farinha', mva: 30, segmento: 'Alimentos' },
+  { ncm: '2103', descricao: 'Molhos, temperos e condimentos', mva: 30, segmento: 'Alimentos' },
+  { ncm: '3303', descricao: 'Perfumes e águas de colônia', mva: 40, segmento: 'Cosméticos' },
+  { ncm: '3304', descricao: 'Cosméticos e maquiagem', mva: 40, segmento: 'Cosméticos' },
+  { ncm: '3305', descricao: 'Xampus e condicionadores', mva: 40, segmento: 'Cosméticos' },
+  { ncm: '3307', descricao: 'Desodorantes e antitranspirantes', mva: 40, segmento: 'Cosméticos' },
+  { ncm: '3003', descricao: 'Medicamentos não embalados para venda', mva: 33, segmento: 'Farmácia' },
+  { ncm: '3004', descricao: 'Medicamentos embalados para venda', mva: 33, segmento: 'Farmácia' },
+  { ncm: '9404', descricao: 'Colchões e almofadas', mva: 45, segmento: 'Móveis' },
+  { ncm: '9401', descricao: 'Assentos e cadeiras', mva: 45, segmento: 'Móveis' },
+  { ncm: '9608', descricao: 'Canetas esferográficas', mva: 45, segmento: 'Papelaria' },
+  { ncm: '9503', descricao: 'Brinquedos e jogos', mva: 55, segmento: 'Brinquedos' },
+  { ncm: '0000', descricao: 'Outro produto (informar MVA manualmente)', mva: null, segmento: 'Outro' },
+];
+
+export function buscarMVA(ncm) {
+  if (!ncm) return null;
+  return TABELA_MVA.find(item => item.ncm === ncm.substring(0, 4)) || null;
+}

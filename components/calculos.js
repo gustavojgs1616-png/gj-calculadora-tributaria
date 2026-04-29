@@ -1,11 +1,28 @@
 export const fmt = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 export const pct = (v) => `${(v || 0).toFixed(2)}%`;
-export const parseVal = (s) =>
-  parseFloat(String(s).replace(/[^\d,]/g, "").replace(",", ".")) || 0;
+// Lê um valor formatado em pt-BR ou número puro e retorna float
+export const parseVal = (s) => {
+  const str = String(s).trim();
+  if (!str) return 0;
+  // Número puro vindo do banco (ex: "300000" ou "300000.5")
+  if (/^\d+(\.\d+)?$/.test(str)) return parseFloat(str) || 0;
+  // Formato pt-BR: remove pontos de milhar, troca vírgula por ponto
+  return parseFloat(str.replace(/\./g, "").replace(",", ".")) || 0;
+};
+
+// Máscara ATM: extrai só dígitos e formata como centavos (300000 → "3.000,00")
 export const fmtInput = (s) => {
-  const n = parseVal(s);
-  return n ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(n) : "";
+  const digits = String(s).replace(/\D/g, "");
+  if (!digits) return "";
+  const value = parseInt(digits, 10) / 100;
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+};
+
+// Formata número do banco para exibição no campo (300000 → "300.000,00")
+export const fmtToInput = (n) => {
+  if (!n) return "";
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 };
 
 const SIMPLES_ANEXOS = {
