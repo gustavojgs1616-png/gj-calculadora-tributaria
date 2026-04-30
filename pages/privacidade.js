@@ -44,7 +44,7 @@ export default function Privacidade() {
           </p>
 
           <Secao titulo="1. Identificação do Controlador">
-            <p>O <strong>GJ Hub Contábil</strong> é operado por <strong>GJ Soluções Contábeis</strong>,
+            <p>O <strong>GJ Hub Contábil</strong> é operado por <strong>GJ Treinamentos Contábeis</strong>,
             inscrita no CNPJ sob o nº <strong>40.625.266/0001-44</strong>, com sede na cidade de
             <strong> São Paulo/SP</strong>.</p>
             <p>Para questões relacionadas à privacidade e proteção de dados, entre em contato pelo e-mail:
@@ -150,7 +150,7 @@ export default function Privacidade() {
               background: "#E0E3FF08", border: "1px solid #E0E3FF15",
               borderRadius: 12, padding: "16px 20px", marginTop: 12,
             }}>
-              <div style={{ fontSize: 14, color: "#F5F6FF", marginBottom: 4 }}><strong>GJ Soluções Contábeis</strong></div>
+              <div style={{ fontSize: 14, color: "#F5F6FF", marginBottom: 4 }}><strong>GJ Treinamentos Contábeis</strong></div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>CNPJ: 40.625.266/0001-44</div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>São Paulo/SP</div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>E-mail: contato@gjsolucoescontabeis.com.br</div>

@@ -524,16 +524,6 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
                 </button>
               </div>
 
-              {/* Links legais — mobile */}
-              <div style={{ display: "flex", gap: 12, justifyContent: "center", paddingTop: 4 }}>
-                <button onClick={() => { router.push("/privacidade"); setDrawerOpen(false); }} style={{
-                  background: "none", border: "none", color: "var(--muted)", fontSize: 11, cursor: "pointer",
-                }}>Privacidade</button>
-                <span style={{ color: "var(--border)", fontSize: 11 }}>·</span>
-                <button onClick={() => { router.push("/termos"); setDrawerOpen(false); }} style={{
-                  background: "none", border: "none", color: "var(--muted)", fontSize: 11, cursor: "pointer",
-                }}>Termos de Uso</button>
-              </div>
             </div>
           </div>
         </>
@@ -672,16 +662,6 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
             <span>Sair</span>
           </button>
 
-          {/* Links legais */}
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", paddingTop: 6, borderTop: "1px solid var(--border)", marginTop: 4 }}>
-            <button onClick={() => router.push("/privacidade")} style={{
-              background: "none", border: "none", color: "var(--muted)", fontSize: 10, cursor: "pointer", padding: "2px 4px",
-            }}>Privacidade</button>
-            <span style={{ color: "var(--border)", fontSize: 10 }}>·</span>
-            <button onClick={() => router.push("/termos")} style={{
-              background: "none", border: "none", color: "var(--muted)", fontSize: 10, cursor: "pointer", padding: "2px 4px",
-            }}>Termos de Uso</button>
-          </div>
         </div>
       </aside>
 

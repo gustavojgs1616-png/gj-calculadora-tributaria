@@ -45,7 +45,7 @@ export default function Termos() {
 
           <Secao titulo="1. Aceitação dos termos">
             <p>Ao acessar ou utilizar o <strong>GJ Hub Contábil</strong>, você concorda integralmente com estes Termos de Uso. Se não concordar com qualquer disposição, não utilize a plataforma.</p>
-            <p>Estes termos constituem um contrato legal entre você e a <strong>GJ Soluções Contábeis</strong> (CNPJ 40.625.266/0001-44), operadora da plataforma GJ Hub Contábil.</p>
+            <p>Estes termos constituem um contrato legal entre você e a <strong>GJ Treinamentos Contábeis</strong> (CNPJ 40.625.266/0001-44), operadora da plataforma GJ Hub Contábil.</p>
           </Secao>
 
           <Secao titulo="2. Descrição do serviço">
@@ -118,11 +118,11 @@ export default function Termos() {
               "Podem não refletir a totalidade das variáveis aplicáveis a cada caso concreto",
               "Não substituem a análise de um profissional contábil habilitado",
             ]} />
-            <p style={{ marginTop: 12 }}>A GJ Soluções Contábeis não se responsabiliza por decisões tomadas com base exclusiva nas simulações realizadas na plataforma.</p>
+            <p style={{ marginTop: 12 }}>A GJ Treinamentos Contábeis não se responsabiliza por decisões tomadas com base exclusiva nas simulações realizadas na plataforma.</p>
           </Secao>
 
           <Secao titulo="8. Propriedade intelectual">
-            <p>Todo o conteúdo da plataforma — incluindo textos, interfaces, algoritmos, logotipos e código-fonte — é de propriedade da GJ Soluções Contábeis e está protegido pela legislação de propriedade intelectual brasileira.</p>
+            <p>Todo o conteúdo da plataforma — incluindo textos, interfaces, algoritmos, logotipos e código-fonte — é de propriedade da GJ Treinamentos Contábeis e está protegido pela legislação de propriedade intelectual brasileira.</p>
             <p>Os dados inseridos pelo usuário nas ferramentas permanecem de sua propriedade. Ao utilizar a plataforma, você nos concede licença limitada para processar esses dados com o único objetivo de prestar os serviços contratados.</p>
           </Secao>
 
@@ -136,7 +136,7 @@ export default function Termos() {
           </Secao>
 
           <Secao titulo="10. Limitação de responsabilidade">
-            <p>Na máxima extensão permitida pela legislação aplicável, a GJ Soluções Contábeis não será responsável por:</p>
+            <p>Na máxima extensão permitida pela legislação aplicável, a GJ Treinamentos Contábeis não será responsável por:</p>
             <Lista itens={[
               "Danos indiretos, incidentais ou consequentes decorrentes do uso da plataforma",
               "Perdas financeiras decorrentes de decisões baseadas nas simulações realizadas",
@@ -171,7 +171,7 @@ export default function Termos() {
               background: "#E0E3FF08", border: "1px solid #E0E3FF15",
               borderRadius: 12, padding: "16px 20px", marginTop: 4,
             }}>
-              <div style={{ fontSize: 14, color: "#F5F6FF", marginBottom: 4 }}><strong>GJ Soluções Contábeis</strong></div>
+              <div style={{ fontSize: 14, color: "#F5F6FF", marginBottom: 4 }}><strong>GJ Treinamentos Contábeis</strong></div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>CNPJ: 40.625.266/0001-44</div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>São Paulo/SP</div>
               <div style={{ fontSize: 13, color: "#808CFF" }}>E-mail: contato@gjsolucoescontabeis.com.br</div>

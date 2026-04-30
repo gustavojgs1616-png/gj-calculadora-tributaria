@@ -206,8 +206,6 @@ export default function LoginPage() {
           backdropFilter: "blur(8px)",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
         }}>
-          <span>© {new Date().getFullYear()} GJ Soluções Contábeis — CNPJ 40.625.266/0001-44</span>
-          <span style={{ color: "#E0E3FF15" }}>|</span>
           <Link href="/privacidade" style={{ color: "#808CFF80", textDecoration: "none" }}
             onMouseEnter={e => e.target.style.color = "#808CFF"}
             onMouseLeave={e => e.target.style.color = "#808CFF80"}>
