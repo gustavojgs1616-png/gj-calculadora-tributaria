@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
 export default function LoginPage() {
@@ -22,17 +23,47 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true); setErro("");
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-    if (error) setErro(error.message === "Invalid login credentials" ? "Email ou senha incorretos." : error.message);
+    if (error) {
+      if (error.message === "Invalid login credentials") setErro("Email ou senha incorretos.");
+      else if (error.message === "Email not confirmed") setErro("Email ainda não confirmado. Entre em contato com o suporte ou aguarde a confirmação.");
+      else setErro(error.message);
+    }
     else router.push("/calculadora");
     setLoading(false);
   };
 
   const handleCadastro = async (e) => {
     e.preventDefault();
-    setLoading(true); setErro("");
-    const { error } = await supabase.auth.signUp({ email, password: senha });
-    if (error) setErro(error.message);
-    else setSucesso("Cadastro realizado! Verifique seu email ou faça login diretamente.");
+    setLoading(true); setErro(""); setSucesso("");
+
+    let json;
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: senha }),
+      });
+      json = await res.json();
+      if (!res.ok) {
+        setErro(json.error || "Erro ao criar conta. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setErro("Erro de conexão. Verifique sua internet e tente novamente.");
+      setLoading(false);
+      return;
+    }
+
+    // Faz login automático após cadastro bem-sucedido
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (loginError) {
+      // Conta criada mas login automático falhou — pede para entrar manualmente
+      setSucesso("Conta criada com sucesso! Agora faça login para entrar.");
+      setMode("login");
+    } else {
+      router.push("/calculadora");
+    }
     setLoading(false);
   };
 
@@ -40,7 +71,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true); setErro("");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/calculadora`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) setErro(error.message);
     else setSucesso("Email de recuperação enviado! Verifique sua caixa de entrada.");
@@ -53,7 +84,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>GJ Contábil Pro — Login</title>
+        <title>GJ Hub Contábil — Login</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -69,9 +100,9 @@ export default function LoginPage() {
           background: "linear-gradient(160deg, #00031F 0%, #000433 100%)",
         }} className="login-panel-left">
           <div style={{ marginBottom: 48 }}>
-            <img src="/logo.png" alt="GJ Contábil Pro" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 32, objectFit: "contain" }} />
+            <img src="/logo.png" alt="GJ Hub Contábil" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 32, objectFit: "contain" }} />
             <h1 style={{ fontSize: 32, fontWeight: 900, color: "#F5F6FF", lineHeight: 1.2, marginBottom: 12 }}>
-              GJ Contábil Pro
+              GJ Hub Contábil
             </h1>
             <p style={{ fontSize: 16, color: "#6670B8", lineHeight: 1.7 }}>
               Compare Simples Nacional, Lucro Presumido e Lucro Real em segundos. Descubra qual regime gera mais economia para sua empresa.
@@ -100,8 +131,8 @@ export default function LoginPage() {
           <div style={{ width: "100%", maxWidth: 420 }}>
             {/* Logo mobile */}
             <div style={{ textAlign: "center", marginBottom: 32 }}>
-              <img src="/logo.png" alt="GJ Contábil Pro" style={{ width: 60, height: 60, borderRadius: 16, margin: "0 auto 16px", display: "block", objectFit: "contain" }} />
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#F5F6FF" }}>GJ Contábil Pro</div>
+              <img src="/logo.png" alt="GJ Hub Contábil" style={{ width: 60, height: 60, borderRadius: 16, margin: "0 auto 16px", display: "block", objectFit: "contain" }} />
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#F5F6FF" }}>GJ Hub Contábil</div>
               <div style={{ fontSize: 13, color: "#808CFF", marginTop: 4, fontWeight: 600 }}>Hub do Contador</div>
             </div>
 
@@ -163,6 +194,31 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Rodapé legal */}
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          textAlign: "center", padding: "12px 24px",
+          fontSize: 11, color: "#6670B840",
+          borderTop: "1px solid #E0E3FF08",
+          background: "#00031Fcc",
+          backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
+        }}>
+          <span>© {new Date().getFullYear()} GJ Soluções Contábeis — CNPJ 40.625.266/0001-44</span>
+          <span style={{ color: "#E0E3FF15" }}>|</span>
+          <Link href="/privacidade" style={{ color: "#808CFF80", textDecoration: "none" }}
+            onMouseEnter={e => e.target.style.color = "#808CFF"}
+            onMouseLeave={e => e.target.style.color = "#808CFF80"}>
+            Privacidade
+          </Link>
+          <span style={{ color: "#E0E3FF15" }}>|</span>
+          <Link href="/termos" style={{ color: "#808CFF80", textDecoration: "none" }}
+            onMouseEnter={e => e.target.style.color = "#808CFF"}
+            onMouseLeave={e => e.target.style.color = "#808CFF80"}>
+            Termos de Uso
+          </Link>
         </div>
       </div>
     </>
