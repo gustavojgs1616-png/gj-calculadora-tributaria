@@ -33,7 +33,7 @@ export default function CardBloqueado({ ferramenta, planoNecessario }) {
         padding: "6px 16px", borderRadius: 20,
         fontSize: 14, fontWeight: 800, marginBottom: 28,
       }}>
-        {plano.icone} Plano {plano.nome}
+        🔐 Plano {plano.nome}
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>

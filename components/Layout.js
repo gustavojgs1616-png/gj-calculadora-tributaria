@@ -169,7 +169,7 @@ const NAV_GRUPOS = [
   {
     titulo: "Principal",
     itens: [
-      { id: "home",        label: "Home",                tipo: "aba",    icon: "home" },
+      { id: "home",        label: "Home",                tipo: "pagina", href: "/home",        icon: "home" },
       { id: "calculadora", label: "Simulador Tributário", tipo: "pagina", href: "/calculadora", icon: "calc" },
     ],
   },
@@ -181,6 +181,7 @@ const NAV_GRUPOS = [
       { id: "honorarios", label: "Honorários",          tipo: "pagina", href: "/honorarios", icon: "calc" },
       { id: "cnpj",       label: "Consulta CNPJ",       tipo: "pagina", href: "/cnpj",       icon: "search" },
       { id: "documentos", label: "Documentos",          tipo: "pagina", href: "/documentos", icon: "doc" },
+      { id: "rescisao",   label: "Rescisão Trabalhista", tipo: "pagina", href: "/rescisao",    icon: "calc" },
       { id: "icmsst",     label: "ICMS-ST",             tipo: "pagina", href: "/icmsst",      icon: "calc" },
       { id: "reforma",    label: "Reforma Tributária",  tipo: "pagina", href: "/reforma",     icon: "reform", destaque: true },
       { id: "simulado",   label: "Simulado CFC",        tipo: "pagina", href: "/simulado",    icon: "award" },
@@ -189,7 +190,7 @@ const NAV_GRUPOS = [
 ];
 
 const BOTTOM_NAV = [
-  { id: "home",        label: "Home",      icon: "home",  tipo: "aba",    href: "/calculadora" },
+  { id: "home",        label: "Home",      icon: "home",  tipo: "pagina", href: "/home" },
   { id: "calculadora", label: "Simulador", icon: "calc",  tipo: "pagina", href: "/calculadora" },
   { id: "noticias",    label: "Notícias",  icon: "news",  tipo: "pagina", href: "/noticias" },
   { id: "simulado",    label: "Simulado",  icon: "award", tipo: "pagina", href: "/simulado" },
@@ -223,34 +224,22 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
     router.push("/");
   };
 
-  const iniciais = user?.email?.slice(0, 2).toUpperCase() || "GJ";
+  const nomeExibido = user?.user_metadata?.nome || user?.email?.split("@")[0] || "";
+  const iniciais = nomeExibido.slice(0, 2).toUpperCase() || "GJ";
   const planoAtual = assinatura ? PLANOS[assinatura.plano] : null;
 
   const isAtivo = (item) => {
-    if (item.tipo === "pagina") {
-      if (item.id === "calculadora") return router.pathname === item.href && abaAtiva !== "home";
-      return router.pathname === item.href;
-    }
-    return abaAtiva === item.id;
+    if (item.tipo === "pagina") return router.pathname === item.href;
+    return false;
   };
 
   const handleClick = (item) => {
     if (item.tipo === "drawer") { setDrawerOpen(true); return; }
-    if (item.tipo === "pagina") {
-      router.push(item.href);
-      // Simulador Tributário vive em /calculadora como aba — troca a aba também
-      if (item.id === "calculadora" && setAba) setAba("calculadora");
-    } else if (setAba) {
-      setAba(item.id);
-    } else {
-      router.push("/calculadora");
-    }
+    if (item.tipo === "pagina") router.push(item.href);
   };
 
   const isBottomAtivo = (item) => {
     if (item.tipo === "drawer") return false;
-    if (item.id === "home") return router.pathname === "/calculadora" && abaAtiva === "home";
-    if (item.id === "calculadora") return router.pathname === "/calculadora" && abaAtiva !== "home";
     return router.pathname === item.href;
   };
 
@@ -374,7 +363,7 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
                 }}>{iniciais}</div>
                 <div style={{ overflow: "hidden", textAlign: "left" }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 175 }}>
-                    {user?.email?.split("@")[0]}
+                    {nomeExibido}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--primary)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 175 }}>
                     Ver meu perfil →
@@ -497,7 +486,7 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
                 }}>{iniciais}</div>
                 <div style={{ textAlign: "left", flex: 1, overflow: "hidden" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {user?.email?.split("@")[0]}
+                    {nomeExibido}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--muted)" }}>Meu Perfil</div>
                 </div>

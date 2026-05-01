@@ -27,7 +27,8 @@ const TIPOS_EVENTO = [
 ];
 
 const OBRIGACOES_MENSAIS = [
-  { id: "fgts",       nome: "FGTS",                   dia: 7,  tipo: "trabalhista", regime: ["Todos"],                          descricao: "Recolhimento do FGTS referente à competência do mês anterior.", orgao: "Caixa Econômica Federal" },
+  { id: "fgts_envio", nome: "FGTS — Envio da Folha",  dia: 15, tipo: "trabalhista", regime: ["Todos"],                          descricao: "Prazo para envio da folha de pagamento ao SEFIP/eSocial referente à competência do mês anterior.", orgao: "Caixa Econômica Federal" },
+  { id: "fgts",      nome: "FGTS — Vencimento",      dia: 20, tipo: "trabalhista", regime: ["Todos"],                          descricao: "Vencimento da guia de recolhimento do FGTS referente à competência do mês anterior. Alteração pela Portaria MTE/MF nº 26/2024.", orgao: "Caixa Econômica Federal" },
   { id: "das",        nome: "DAS — Simples Nacional",  dia: 20, tipo: "simples",     regime: ["Simples Nacional", "MEI"],        descricao: "Documento de Arrecadação do Simples Nacional. Inclui todos os tributos federais, estaduais e municipais em uma única guia.", orgao: "Receita Federal" },
   { id: "gps",        nome: "GPS — INSS Patronal",     dia: 20, tipo: "trabalhista", regime: ["Lucro Presumido", "Lucro Real"],  descricao: "Guia da Previdência Social — contribuição patronal (20%) e cota do empregado sobre a folha de pagamento.", orgao: "INSS / Receita Federal" },
   { id: "irrf",       nome: "IRRF — Folha",            dia: 20, tipo: "federal",     regime: ["Todos"],                          descricao: "Imposto de Renda Retido na Fonte incidente sobre rendimentos do trabalho assalariado.", orgao: "Receita Federal" },
@@ -104,17 +105,38 @@ const btnNavStyle = {
   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 };
 
+// ── Helpers horário ───────────────────────────────────────────────────────────
+// Encode: se horario definido, embute como "⏰HH:MM\n" no início de descricao
+function encodeDescricao(horario, obs) {
+  if (horario) return `⏰${horario}\n${obs || ""}`;
+  return obs || "";
+}
+// Decode: extrai horario e obs do campo descricao
+function decodeDescricao(descricao) {
+  if (!descricao) return { horario: "", obs: "" };
+  const m = descricao.match(/^⏰(\d{2}:\d{2})\n?([\s\S]*)$/);
+  if (m) return { horario: m[1], obs: m[2] };
+  return { horario: "", obs: descricao };
+}
+
 // ── Modal de novo evento ──────────────────────────────────────────────────────
 
 function ModalEvento({ dia, mes, ano, onSalvar, onFechar, saving }) {
-  const [titulo, setTitulo]       = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [tipo, setTipo]           = useState("lembrete");
+  const [titulo, setTitulo]     = useState("");
+  const [obs, setObs]           = useState("");
+  const [horario, setHorario]   = useState("");
+  const [tipo, setTipo]         = useState("lembrete");
   const inputRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const cor = TIPOS_EVENTO.find((t) => t.id === tipo)?.cor || "#818cf8";
+
+  const salvar = () => {
+    if (!titulo.trim()) return;
+    const descricao = encodeDescricao(horario, obs);
+    onSalvar({ titulo, descricao, tipo, cor });
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "#00000070", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
@@ -149,21 +171,37 @@ function ModalEvento({ dia, mes, ano, onSalvar, onFechar, saving }) {
             <label className="label">Título *</label>
             <input ref={inputRef} value={titulo} onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ex: Reunião com cliente ABC" maxLength={80}
-              onKeyDown={(e) => e.key === "Enter" && titulo.trim() && onSalvar({ titulo, descricao, tipo, cor })} />
+              onKeyDown={(e) => e.key === "Enter" && salvar()} />
           </div>
 
-          {/* Descrição */}
-          <div>
-            <label className="label">Observação (opcional)</label>
-            <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Detalhes, link, telefone..." rows={3}
-              style={{ resize: "vertical", minHeight: 72 }} />
+          {/* Horário + Observação lado a lado */}
+          <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 10 }}>
+            <div>
+              <label className="label">Horário</label>
+              <div style={{ position: "relative" }}>
+                <span style={{
+                  position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+                  fontSize: 14, pointerEvents: "none", color: horario ? cor : "var(--muted)",
+                }}>⏰</span>
+                <input
+                  type="time"
+                  value={horario}
+                  onChange={(e) => setHorario(e.target.value)}
+                  style={{ paddingLeft: 32, colorScheme: "dark" }}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="label">Observação</label>
+              <input value={obs} onChange={(e) => setObs(e.target.value)}
+                placeholder="Detalhes, link, cliente..." maxLength={120} />
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <button onClick={onFechar} className="btn-ghost" style={{ flex: 1 }}>Cancelar</button>
             <button
-              onClick={() => titulo.trim() && onSalvar({ titulo, descricao, tipo, cor })}
+              onClick={salvar}
               disabled={!titulo.trim() || saving}
               className="btn-primary" style={{ flex: 2 }}>
               {saving ? "Salvando..." : "Salvar evento"}
@@ -548,6 +586,7 @@ export default function FiscalPage() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           {eventosDia.map((ev) => {
                             const tipoEv = TIPOS_EVENTO.find((t) => t.id === ev.tipo);
+                            const { horario: evHora, obs: evObs } = decodeDescricao(ev.descricao);
                             return (
                               <div key={ev.id} style={{
                                 borderLeft: `4px solid ${ev.cor}`, background: ev.cor + "15",
@@ -555,10 +594,18 @@ export default function FiscalPage() {
                                 display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8,
                               }}>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
-                                    {tipoEv?.label.split(" ")[0]} {ev.titulo}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                                      {tipoEv?.label.split(" ")[0]} {ev.titulo}
+                                    </span>
+                                    {evHora && (
+                                      <span style={{
+                                        fontSize: 11, fontWeight: 700, padding: "1px 8px", borderRadius: 10,
+                                        background: ev.cor + "25", color: ev.cor, flexShrink: 0,
+                                      }}>⏰ {evHora}</span>
+                                    )}
                                   </div>
-                                  {ev.descricao && <div style={{ fontSize: 12, color: "var(--muted)" }}>{ev.descricao}</div>}
+                                  {evObs && <div style={{ fontSize: 12, color: "var(--muted)" }}>{evObs}</div>}
                                 </div>
                                 <button onClick={() => excluirEvento(ev.id)} style={{ background: "none", color: "var(--muted)", fontSize: 14, padding: 4, cursor: "pointer" }}>✕</button>
                               </div>
@@ -730,27 +777,41 @@ export default function FiscalPage() {
                     {eventosMes.map((ev) => {
                       const [, , d] = ev.data.split("-").map(Number);
                       const tipoEv = TIPOS_EVENTO.find((t) => t.id === ev.tipo);
+                      const { horario: evHora, obs: evObs } = decodeDescricao(ev.descricao);
                       return (
                         <div key={ev.id} style={{
                           borderLeft: `4px solid ${ev.cor}`, background: ev.cor + "12",
                           borderRadius: 12, padding: "14px 16px",
                           display: "flex", gap: 12, alignItems: "flex-start",
                         }}>
+                          {/* Badge de data */}
                           <div style={{
-                            minWidth: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                            background: ev.cor + "22", color: ev.cor,
-                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                            fontSize: 11, fontWeight: 800, gap: 1,
+                            minWidth: 44, flexShrink: 0,
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                           }}>
-                            <span style={{ fontSize: 16, fontWeight: 800 }}>{d}</span>
-                            <span>{MESES[mesAtual - 1].slice(0, 3)}</span>
+                            <div style={{
+                              width: 44, height: 44, borderRadius: 10,
+                              background: ev.cor + "22", color: ev.cor,
+                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                              fontSize: 11, fontWeight: 800, gap: 1,
+                            }}>
+                              <span style={{ fontSize: 16, fontWeight: 800 }}>{d}</span>
+                              <span>{MESES[mesAtual - 1].slice(0, 3)}</span>
+                            </div>
+                            {evHora && (
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: ev.cor,
+                                background: ev.cor + "22", borderRadius: 6,
+                                padding: "2px 5px", whiteSpace: "nowrap",
+                              }}>⏰ {evHora}</span>
+                            )}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
                               {tipoEv?.label.split(" ")[0]} {ev.titulo}
                             </div>
-                            {ev.descricao && <div style={{ fontSize: 12, color: "var(--muted)" }}>{ev.descricao}</div>}
-                            <span style={{ fontSize: 10, fontWeight: 700, color: ev.cor, background: ev.cor + "22", borderRadius: 5, padding: "2px 7px", marginTop: 4, display: "inline-block" }}>
+                            {evObs && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>{evObs}</div>}
+                            <span style={{ fontSize: 10, fontWeight: 700, color: ev.cor, background: ev.cor + "22", borderRadius: 5, padding: "2px 7px", display: "inline-block" }}>
                               {tipoEv?.label}
                             </span>
                           </div>

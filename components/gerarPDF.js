@@ -51,7 +51,7 @@ export function gerarPDF({ empresa, faturamentoAnual, atividade, folha, custos, 
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Relatório Tributário — ${empresa || "GJ Contábil Pro"}</title>
+  <title>Relatório Tributário — ${empresa || "GJ Hub Contábil"}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #222; background: #fff; }
@@ -67,7 +67,7 @@ export function gerarPDF({ empresa, faturamentoAnual, atividade, folha, custos, 
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #f5a623;padding-bottom:20px;margin-bottom:24px;">
     <div>
       <div style="font-size:22px;font-weight:800;color:#f5a623;">GJ Treinamentos Contábeis</div>
-      <div style="font-size:13px;color:#888;margin-top:2px;">GJ Contábil Pro</div>
+      <div style="font-size:13px;color:#888;margin-top:2px;">GJ Hub Contábil</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:12px;color:#888;">Emitido em</div>

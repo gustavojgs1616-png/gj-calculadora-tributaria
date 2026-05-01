@@ -253,14 +253,14 @@ function gerarPDF(dados, resultado, user) {
     </tr>`).join("");
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
-  <title>Proposta de Honorários — GJ Contábil Pro</title>
+  <title>Proposta de Honorários — GJ Hub Contábil</title>
   <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#222;background:#fff;padding:40px 48px}
   @media print{body{padding:20px 24px}.no-print{display:none}}</style></head>
   <body>
     <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #DF9F20;padding-bottom:20px;margin-bottom:32px;">
       <div>
         <div style="font-size:22px;font-weight:800;color:#DF9F20;">GJ Treinamentos Contábeis</div>
-        <div style="font-size:13px;color:#888;margin-top:3px;">GJ Contábil Pro — Calculadora de Honorários</div>
+        <div style="font-size:13px;color:#888;margin-top:3px;">GJ Hub Contábil — Calculadora de Honorários</div>
       </div>
       <div style="text-align:right;font-size:13px;color:#888;">
         <div>Emitido em</div><div style="font-weight:700;color:#222;">${data}</div>
@@ -302,7 +302,7 @@ function gerarPDF(dados, resultado, user) {
       • Os valores acima são baseados nas tabelas de referência do CFC e CRCs estaduais, ajustados ao mercado de ${nomeEstado}.<br/>
       • O honorário final pode variar conforme a complexidade operacional do cliente, volume de notas fiscais e movimentações bancárias.<br/>
       • Valores de serviços únicos (abertura/encerramento) não estão incluídos no total mensal.<br/>
-      • Simulação gerada pelo GJ Contábil Pro em ${data}.
+      • Simulação gerada pelo GJ Hub Contábil em ${data}.
     </div>
 
     <button class="no-print" onclick="window.print()" style="background:#DF9F20;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">
@@ -375,7 +375,7 @@ export default function HonorariosPage() {
   return (
     <>
       <Head>
-        <title>Calculadora de Honorários — GJ Contábil Pro</title>
+        <title>Calculadora de Honorários — GJ Hub Contábil</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 

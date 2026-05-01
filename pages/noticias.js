@@ -17,7 +17,7 @@ const CATEGORIAS = [
   { id: "Simples Nacional",   cor: "#f97316", bg: "#f9731618" },
 ];
 
-const FONTES = ["Todas", "Portal Contábeis", "Jornal Contábil", "CFC", "Fenacon", "Tributário.net", "Contador Perito"];
+const FONTES = ["Todas", "Portal Contábeis", "Jornal Contábil", "CFC", "Fenacon", "Tributário.net", "Contador Perito", "Migalhas Tributário", "Contabilizei", "SPED/Fazenda"];
 
 function getCategoriaStyle(cat) {
   return CATEGORIAS.find((c) => c.id === cat) || CATEGORIAS[0];
@@ -199,7 +199,7 @@ export default function NoticiasPage() {
   return (
     <>
       <Head>
-        <title>Notícias Contábeis — GJ Contábil Pro</title>
+        <title>Notícias Contábeis — GJ Hub Contábil</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 

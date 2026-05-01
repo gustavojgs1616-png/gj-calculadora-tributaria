@@ -5,7 +5,23 @@ import { supabase } from "../lib/supabaseClient";
 import { calcSimples, calcLP, calcLR, fmt, pct, parseVal, fmtInput, fmtToInput } from "../components/calculos";
 import { gerarPDF } from "../components/gerarPDF";
 import Layout from "../components/Layout";
-import { useAssinatura } from "../lib/AssinaturaContext";
+
+// ─── Máscara CNPJ ─────────────────────────────────────────────────────────────
+function maskCNPJ(v) {
+  return v.replace(/\D/g, "").slice(0, 14)
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+}
+
+// Extrai nome e cnpj do campo empresa salvo no banco ("Nome | XX.XXX.XXX/XXXX-XX")
+function parseEmpresa(str) {
+  if (!str) return { nome: "", cnpj: "" };
+  const idx = str.lastIndexOf(" | ");
+  if (idx === -1) return { nome: str, cnpj: "" };
+  return { nome: str.slice(0, idx), cnpj: str.slice(idx + 3) };
+}
 
 // ─── Atividades ────────────────────────────────────────────────────────────────
 const atividades = [
@@ -115,209 +131,6 @@ function RegimeCard({ r, maxAnual, melhor }) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── ABA HOME — Hub Dashboard ──────────────────────────────────────────────────
-function AbaHome({ user, setAba, pode }) {
-  const hora = new Date().getHours();
-  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
-  const nome = user?.email?.split("@")[0] || "Usuário";
-  const router = useRouter();
-
-  const modulos = [
-    {
-      id: "simulador",
-      label: "Simulador Tributário",
-      desc: "Compare Simples Nacional, Lucro Presumido e Lucro Real. Descubra o regime mais vantajoso e acesse seu histórico de simulações.",
-      cor: "var(--primary)",
-      badge: "Mais usado",
-      acao: () => setAba("calculadora"),
-    },
-    {
-      id: "noticias",
-      label: "Portal de Notícias",
-      desc: "Notícias contábeis, fiscais e tributárias em tempo real. Reforma tributária, Simples Nacional, CFC e muito mais.",
-      cor: "#3b82f6",
-      acao: () => router.push("/noticias"),
-    },
-    {
-      id: "fiscal",
-      label: "Calendário Fiscal",
-      desc: "Todas as obrigações fiscais do mês em um só lugar: FGTS, DAS, IRRF, DCTF, PIS/COFINS e declarações anuais.",
-      cor: "#22c55e",
-      acao: () => router.push("/fiscal"),
-    },
-    {
-      id: "honorarios",
-      label: "Calculadora de Honorários",
-      desc: "Calcule honorários contábeis por estado, regime tributário, faturamento e serviços. Gere propostas em PDF.",
-      cor: "#f97316",
-      acao: () => router.push("/honorarios"),
-    },
-    {
-      id: "cnpj",
-      label: "Consulta CNPJ",
-      desc: "Consulte dados completos de qualquer empresa: razão social, sócios, CNAEs, situação cadastral e endereço.",
-      cor: "#8b5cf6",
-      acao: () => router.push("/cnpj"),
-    },
-    {
-      id: "documentos",
-      label: "Gerador de Documentos",
-      desc: "Gere contratos, procurações, declarações e cartas em PDF na hora. Sem Word, sem perda de tempo.",
-      cor: "#06b6d4",
-      acao: () => router.push("/documentos"),
-    },
-    {
-      id: "icmsst",
-      label: "ICMS-ST",
-      desc: "Calcule o ICMS por Substituição Tributária em operações interestaduais com MVA ajustada, alíquotas automáticas e relatório em PDF.",
-      cor: "#818cf8",
-      acao: () => router.push("/icmsst"),
-    },
-    {
-      id: "simulado",
-      label: "Simulado CFC",
-      desc: "Simule o Exame de Suficiência com questões reais das últimas edições. Resultado detalhado por área com gabarito comentado.",
-      cor: "#DF9F20",
-      acao: () => router.push("/simulado"),
-    },
-    {
-      id: "reforma",
-      label: "Reforma Tributária",
-      desc: "Simule o impacto da LC 214/2025 para seus clientes. IBS + CBS, regimes comparados, cronograma de transição 2026–2033.",
-      cor: "#DF9F20",
-      badge: "NOVO",
-      destaque: true,
-      acao: () => router.push("/reforma"),
-    },
-  ];
-
-  return (
-    <div style={{ padding: "32px 28px", maxWidth: 1020, margin: "0 auto" }}>
-
-      {/* Saudação */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>
-          {saudacao}, <span style={{ color: "var(--primary)" }}>{nome}</span>
-        </h1>
-        <p style={{ color: "var(--muted)", marginTop: 4, fontSize: 14 }}>
-          Bem-vindo ao <strong style={{ color: "var(--text)" }}>GJ Hub Contábil</strong> — o hub completo para contadores e estudantes de contabilidade.
-        </p>
-      </div>
-
-      {/* Banner — Reforma Tributária */}
-      {pode && pode("reforma") && (
-        <div
-          onClick={() => router.push("/reforma")}
-          style={{
-            background: "linear-gradient(135deg, #1a1400 0%, #2a1f00 50%, #1a1400 100%)",
-            border: "1px solid #DF9F2040",
-            borderRadius: 16, padding: "20px 24px", marginBottom: 28, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-            boxShadow: "0 4px 30px #DF9F2018",
-            transition: "box-shadow 0.2s, border-color 0.2s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 40px #DF9F2030"; e.currentTarget.style.borderColor = "#DF9F2070"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 30px #DF9F2018"; e.currentTarget.style.borderColor = "#DF9F2040"; }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-              background: "#DF9F2022", border: "1px solid #DF9F2044",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-            }}>📊</div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#F5F6FF" }}>Simulador da Reforma Tributária</span>
-                <span style={{
-                  fontSize: 10, fontWeight: 800, color: "#000", background: "linear-gradient(135deg,#DF9F20,#B27F1A)",
-                  padding: "2px 8px", borderRadius: 20, letterSpacing: "0.06em",
-                }}>NOVO</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#DF9F20AA", lineHeight: 1.5 }}>
-                Calcule o impacto da LC 214/2025 — IBS + CBS, cronograma 2026–2033 e recomendação de regime para seus clientes.
-              </div>
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, fontSize: 13, fontWeight: 700, color: "#DF9F20",
-            background: "#DF9F2015", border: "1px solid #DF9F2040",
-            padding: "8px 18px", borderRadius: 10, whiteSpace: "nowrap",
-          }}>
-            Simular agora →
-          </div>
-        </div>
-      )}
-
-      {/* Label seção */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
-        {modulos.length} ferramentas disponíveis
-      </div>
-
-      {/* Grid de módulos */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 16 }}>
-        {modulos.map((m) => {
-          const liberado = pode ? pode(m.id) : true;
-          return (
-            <button
-              key={m.id}
-              onClick={liberado ? m.acao : () => router.push("/assinatura")}
-              style={{
-                background: m.destaque && liberado ? "linear-gradient(135deg, #1a1400 0%, #2a1f00 100%)" : "var(--bg-card)",
-                border: m.destaque && liberado ? "1px solid #DF9F2040" : "1px solid var(--border)",
-                borderLeft: `4px solid ${liberado ? m.cor : "var(--border)"}`,
-                borderRadius: 14, padding: "22px 22px", textAlign: "left",
-                cursor: "pointer", transition: "all 0.15s", position: "relative",
-                opacity: liberado ? 1 : 0.6,
-                boxShadow: m.destaque && liberado ? "0 4px 20px #DF9F2015" : "none",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow = `0 10px 28px ${liberado ? m.cor : "#000"}28`;
-                if (liberado) { e.currentTarget.style.borderColor = m.cor; e.currentTarget.style.borderLeftColor = m.cor; }
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = "";
-                e.currentTarget.style.boxShadow = m.destaque && liberado ? "0 4px 20px #DF9F2015" : "";
-                e.currentTarget.style.borderColor = m.destaque && liberado ? "#DF9F2040" : "var(--border)";
-                e.currentTarget.style.borderLeftColor = liberado ? m.cor : "var(--border)";
-              }}
-            >
-              {/* Badge de plano ou de destaque */}
-              {!liberado && (
-                <div style={{
-                  position: "absolute", top: 14, right: 14,
-                  background: "#ef444420", color: "#ef4444",
-                  fontSize: 10, fontWeight: 700, padding: "3px 9px",
-                  borderRadius: 20, display: "flex", alignItems: "center", gap: 4,
-                }}>
-                  Upgrade
-                </div>
-              )}
-              {liberado && m.badge && (
-                <div style={{
-                  position: "absolute", top: 16, right: 16,
-                  background: m.destaque ? "linear-gradient(135deg,#DF9F20,#B27F1A)" : `${m.cor}22`,
-                  color: m.destaque ? "#000" : m.cor,
-                  fontSize: 10, fontWeight: 800, padding: "3px 9px",
-                  borderRadius: 20, letterSpacing: "0.06em",
-                }}>
-                  {m.badge}
-                </div>
-              )}
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: liberado ? m.cor : "var(--border)", marginBottom: 16 }} />
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 7 }}>{m.label}</div>
-              <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>{m.desc}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: liberado ? m.cor : "var(--muted)" }}>
-                {liberado ? "Acessar →" : "Ver planos →"}
-              </div>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -618,6 +431,7 @@ function AbaReforma({ dadosCalc }) {
 function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
   const [etapa, setEtapa] = useState(1);
   const [empresa, setEmpresa] = useState("");
+  const [cnpj, setCnpj] = useState("");
   const [fatMensal, setFatMensal] = useState("");
   const [atividade, setAtividade] = useState("servicos");
   const [folha, setFolha] = useState("");
@@ -646,9 +460,12 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
 
     if (onCalculado) onCalculado({ fatAnual, atividade, melhor: melhorR });
 
+    // Salva cnpj embutido no campo empresa para evitar alteração de schema
+    const empresaDB = empresa && cnpj ? `${empresa} | ${cnpj}` : empresa;
+
     try {
       await supabase.from("simulacoes").insert({
-        user_id: user.id, empresa, atividade,
+        user_id: user.id, empresa: empresaDB, atividade,
         faturamento_mensal: parseVal(fatMensal),
         faturamento_anual: fatAnual,
         folha_mensal: folhaVal, custos_mensais: custosVal,
@@ -661,7 +478,7 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
 
   const nova = () => {
     setEtapa(1); setResultados([]); setMelhor(null); setEconomia(0);
-    setEmpresa(""); setFatMensal(""); setFolha(""); setCustos(""); setAtividade("servicos");
+    setEmpresa(""); setCnpj(""); setFatMensal(""); setFolha(""); setCustos(""); setAtividade("servicos");
   };
 
   const maxAnual = resultados.length > 0 ? Math.max(...resultados.map((r) => r.anual)) : 1;
@@ -691,9 +508,21 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
         <div className="card">
           <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24 }}>Dados da Empresa</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div>
-              <label className="label">Nome da empresa (opcional)</label>
-              <input type="text" value={empresa} onChange={(e) => setEmpresa(e.target.value)} placeholder="Ex: Empresa ABC Ltda" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div>
+                <label className="label">Nome da empresa <span style={{ color: "var(--muted)", fontWeight: 400 }}>(opcional)</span></label>
+                <input type="text" value={empresa} onChange={(e) => setEmpresa(e.target.value)} placeholder="Ex: Empresa ABC Ltda" />
+              </div>
+              <div>
+                <label className="label">CNPJ <span style={{ color: "var(--muted)", fontWeight: 400 }}>(opcional)</span></label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={cnpj}
+                  onChange={(e) => setCnpj(maskCNPJ(e.target.value))}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
             </div>
             <div>
               <label className="label">Faturamento mensal (R$)</label>
@@ -930,10 +759,21 @@ function AbaHistorico({ simulacoes, onDeletar, onRecarregar, setAba }) {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {simulacoes.map((s) => (
+        {simulacoes.map((s) => {
+          const { nome, cnpj } = parseEmpresa(s.empresa);
+          return (
           <div key={s.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "16px 20px" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{s.empresa || "Sem nome"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 15 }}>{nome || "Sem nome"}</span>
+                {cnpj && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, color: "var(--muted)",
+                    background: "var(--bg-input)", border: "1px solid var(--border)",
+                    padding: "2px 8px", borderRadius: 6,
+                  }}>{cnpj}</span>
+                )}
+              </div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>
                 {atividadeLabel[s.atividade] || s.atividade} • {new Date(s.created_at).toLocaleDateString("pt-BR")}
               </div>
@@ -948,7 +788,8 @@ function AbaHistorico({ simulacoes, onDeletar, onRecarregar, setAba }) {
               <button className="btn-danger" style={{ fontSize: 12, padding: "7px 14px" }} onClick={() => onDeletar(s.id)}>Excluir</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -958,10 +799,7 @@ function AbaHistorico({ simulacoes, onDeletar, onRecarregar, setAba }) {
 export default function CalculadoraPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [abaAtiva, setAbaAtiva] = useState("home");
-  const { pode } = useAssinatura();
   const [simulacoes, setSimulacoes] = useState([]);
-  const [simParaAbrir, setSimParaAbrir] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -986,34 +824,23 @@ export default function CalculadoraPage() {
     setSimulacoes((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const abrirSim = (s) => {
-    setSimParaAbrir(s);
-    setAbaAtiva("calculadora");
-  };
-
   if (!user) return null;
 
   return (
     <>
       <Head>
-        <title>GJ Hub Contábil</title>
+        <title>Simulador Tributário | GJ Hub Contábil</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Layout user={user} abaAtiva={abaAtiva} setAba={setAbaAtiva}>
-        {abaAtiva === "home" && (
-          <AbaHome user={user} setAba={setAbaAtiva} pode={pode} />
-        )}
-        {abaAtiva === "calculadora" && (
-          <AbaSimuladorTributario
-            user={user}
-            simulacoes={simulacoes}
-            onDeletar={deletarSim}
-            onSimulacaoSalva={carregarSimulacoes}
-            simInicial={simParaAbrir}
-          />
-        )}
+      <Layout user={user}>
+        <AbaSimuladorTributario
+          user={user}
+          simulacoes={simulacoes}
+          onDeletar={deletarSim}
+          onSimulacaoSalva={carregarSimulacoes}
+        />
       </Layout>
     </>
   );

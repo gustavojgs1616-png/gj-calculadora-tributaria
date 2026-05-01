@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabaseClient";
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState("login");
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/calculadora");
+      if (session) router.replace("/home");
     });
   }, [router]);
 
@@ -28,7 +29,7 @@ export default function LoginPage() {
       else if (error.message === "Email not confirmed") setErro("Email ainda não confirmado. Entre em contato com o suporte ou aguarde a confirmação.");
       else setErro(error.message);
     }
-    else router.push("/calculadora");
+    else router.push("/home");
     setLoading(false);
   };
 
@@ -41,7 +42,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: senha }),
+        body: JSON.stringify({ email, password: senha, nome }),
       });
       json = await res.json();
       if (!res.ok) {
@@ -62,7 +63,7 @@ export default function LoginPage() {
       setSucesso("Conta criada com sucesso! Agora faça login para entrar.");
       setMode("login");
     } else {
-      router.push("/calculadora");
+      router.push("/home");
     }
     setLoading(false);
   };
@@ -155,6 +156,12 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handlers[mode]} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {mode === "cadastro" && (
+                  <div>
+                    <label className="label">Nome</label>
+                    <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome completo" minLength={2} />
+                  </div>
+                )}
                 <div>
                   <label className="label">Email</label>
                   <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
@@ -173,17 +180,17 @@ export default function LoginPage() {
               <div style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "#6670B8", display: "flex", flexDirection: "column", gap: 10 }}>
                 {mode === "login" && (
                   <>
-                    <button onClick={() => { setMode("recuperar"); setErro(""); setSucesso(""); }}
+                    <button onClick={() => { setMode("recuperar"); setErro(""); setSucesso(""); setNome(""); }}
                       style={{ background: "none", color: "#6670B8", fontSize: 13, padding: 0 }}>Esqueci minha senha</button>
                     <span>Não tem conta?{" "}
-                      <button onClick={() => { setMode("cadastro"); setErro(""); setSucesso(""); }}
+                      <button onClick={() => { setMode("cadastro"); setErro(""); setSucesso(""); setNome(""); }}
                         style={{ background: "none", color: "#DF9F20", fontSize: 13, padding: 0, fontWeight: 700 }}>Criar conta gratuita</button>
                     </span>
                   </>
                 )}
                 {mode === "cadastro" && (
                   <span>Já tem conta?{" "}
-                    <button onClick={() => { setMode("login"); setErro(""); setSucesso(""); }}
+                    <button onClick={() => { setMode("login"); setErro(""); setSucesso(""); setNome(""); }}
                       style={{ background: "none", color: "#DF9F20", fontSize: 13, padding: 0, fontWeight: 700 }}>Entrar</button>
                   </span>
                 )}

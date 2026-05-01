@@ -1,7 +1,7 @@
 import Parser from "rss-parser";
 
 const parser = new Parser({
-  timeout: 10000,
+  timeout: 12000,
   headers: {
     "User-Agent": "GJContabilPro/1.0",
     Accept: "application/rss+xml, application/xml, text/xml, */*",
@@ -15,12 +15,17 @@ const parser = new Parser({
 });
 
 const FEEDS = [
-  { url: "https://www.contabeis.com.br/noticias/rss/",   source: "Portal Contábeis",  categoria: "Contabilidade" },
-  { url: "https://www.jornalcontabil.com.br/feed/",       source: "Jornal Contábil",   categoria: "Fiscal"        },
-  { url: "https://cfc.org.br/feed/",                      source: "CFC",               categoria: "Contabilidade" },
-  { url: "https://fenacon.org.br/feed/",                  source: "Fenacon",           categoria: "Tributário"    },
-  { url: "https://tributario.net/feed/",                  source: "Tributário.net",    categoria: "Tributário"    },
-  { url: "https://www.contadorperito.com/feed/",          source: "Contador Perito",   categoria: "Contabilidade" },
+  // ── Contabilidade ───────────────────────────────────────────────────────────
+  { url: "https://www.contabeis.com.br/noticias/rss/",        source: "Portal Contábeis",   categoria: "Contabilidade" },
+  { url: "https://www.jornalcontabil.com.br/feed/",            source: "Jornal Contábil",    categoria: "Contabilidade" },
+  { url: "https://cfc.org.br/feed/",                           source: "CFC",                categoria: "Contabilidade" },
+  { url: "https://www.contadorperito.com/feed/",               source: "Contador Perito",    categoria: "Contabilidade" },
+  { url: "https://blog.contabilizei.com.br/feed/",             source: "Contabilizei",       categoria: "Contabilidade" },
+  // ── Tributário & Fiscal ─────────────────────────────────────────────────────
+  { url: "https://tributario.net/feed/",                       source: "Tributário.net",     categoria: "Tributário"    },
+  { url: "https://fenacon.org.br/feed/",                       source: "Fenacon",            categoria: "Tributário"    },
+  { url: "https://www.migalhas.com.br/rss/tributario",         source: "Migalhas Tributário",categoria: "Tributário"    },
+  { url: "https://www.sped.fazenda.gov.br/spedtabelas/AppHome/Noticias/rss", source: "SPED/Fazenda", categoria: "Fiscal" },
 ];
 
 const CATEGORIA_KEYWORDS = {
@@ -55,7 +60,7 @@ function stripHtml(str = "") {
 async function fetchFeed(feed) {
   try {
     const data = await parser.parseURL(feed.url);
-    return (data.items || []).slice(0, 12).map((item) => {
+    return (data.items || []).slice(0, 20).map((item) => {
       const summary = stripHtml(item.contentSnippet || item.summary || item.content || "");
       return {
         id:        item.guid || item.link || Math.random().toString(36),
