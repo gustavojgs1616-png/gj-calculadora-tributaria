@@ -186,12 +186,9 @@ function PricingCard({ planKey, planoAtual, isTrial, diasTrial }) {
               {info.parcelas}
             </span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>
+          <div style={{ fontSize: 11, color: "var(--muted)" }}>
             ou R$ {info.precoAnual.toLocaleString("pt-BR")} à vista ·{" "}
             <span style={{ color: "#22c55e", fontWeight: 700 }}>economia de {info.economiaPorc}</span>
-          </div>
-          <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
-            equivale a R$ {info.precoMesAnual}/mês
           </div>
         </div>
 
