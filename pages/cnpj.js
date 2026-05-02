@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabaseClient";
 import { useAssinatura } from "../lib/AssinaturaContext";
 import CardBloqueado from "../components/CardBloqueado";
+import { CFOP_DATA, CST_ICMS, CSOSN_DATA, CST_PIS_COFINS, SINTEGRA_ESTADOS } from "../components/dadosFiscais";
 
 // ── Utilitários ───────────────────────────────────────────────────────────────
 
@@ -107,8 +108,16 @@ export default function CNPJPage() {
   const [erro, setErro]           = useState(null);
   const [historico, setHistorico] = useState([]);
   const [loadingHist, setLoadingHist] = useState(false);
-  const [abaAtiva, setAbaAtiva]   = useState("consulta"); // "consulta" | "historico"
+  const [abaAtiva, setAbaAtiva]   = useState("consulta"); // "consulta" | "historico" | "cfop" | "cst" | "sintegra"
   const [excluindo, setExcluindo] = useState(null);
+
+  // ── CFOP / CST / Sintegra states ──
+  const [buscaCFOP,    setBuscaCFOP]    = useState("");
+  const [filtroEscopo, setFiltroEscopo] = useState("todos"); // "todos" | "est" | "int" | "ext"
+  const [filtroDir,    setFiltroDir]    = useState("todos"); // "todos" | "E" | "S"
+  const [buscaCST,     setBuscaCST]     = useState("");
+  const [abaCST,       setAbaCST]       = useState("icms"); // "icms" | "csosn" | "piscofins"
+  const [ufSintegra,   setUfSintegra]   = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -186,6 +195,7 @@ export default function CNPJPage() {
       }
       const data = await res.json();
       setEmpresa(data);
+      if (data.uf) setUfSintegra(data.uf);
       const sn = data.simples || null;
       if (sn) setSimples(sn);
       if (user) await salvarHistorico(user.id, data, sn);
@@ -201,6 +211,24 @@ export default function CNPJPage() {
     buscar(h.cnpj);
   };
 
+  // ── Dados filtrados ────────────────────────────────────────────────────────
+  const cfopFiltrado = useMemo(() => {
+    const q = buscaCFOP.toLowerCase().trim();
+    return CFOP_DATA.filter(c => {
+      if (filtroDir !== "todos" && c.dir !== filtroDir) return false;
+      if (filtroEscopo !== "todos" && c.escopo !== filtroEscopo) return false;
+      if (!q) return true;
+      return c.codigo.includes(q) || c.desc.toLowerCase().includes(q) || c.grupo.toLowerCase().includes(q);
+    });
+  }, [buscaCFOP, filtroDir, filtroEscopo]);
+
+  const cstFiltrado = useMemo(() => {
+    const q = buscaCST.toLowerCase().trim();
+    const base = abaCST === "icms" ? CST_ICMS : abaCST === "csosn" ? CSOSN_DATA : CST_PIS_COFINS;
+    if (!q) return base;
+    return base.filter(c => c.cst.includes(q) || c.desc.toLowerCase().includes(q));
+  }, [buscaCST, abaCST]);
+
   if (!user || carregandoPlano) return null;
   if (!pode("cnpj")) return (
     <Layout user={user}>
@@ -213,7 +241,7 @@ export default function CNPJPage() {
   return (
     <>
       <Head>
-        <title>Consulta CNPJ — GJ Hub Contábil</title>
+        <title>Consulta Fiscal — GJ Hub Contábil</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -222,24 +250,27 @@ export default function CNPJPage() {
 
           {/* Cabeçalho */}
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0 }}>Consulta CNPJ</h1>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0 }}>Consulta Fiscal</h1>
             <p style={{ color: "var(--muted)", marginTop: 6, fontSize: 14 }}>
-              Dados completos da Receita Federal + situação no Simples Nacional
+              CNPJ · CFOP · CST/CSOSN · Sintegra — referências fiscais em um lugar só
             </p>
           </div>
 
           {/* Abas */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "var(--bg-card)", borderRadius: 12, padding: 4, width: "fit-content", border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
             {[
               { id: "consulta",  label: "🔍 Consultar" },
               { id: "historico", label: `📋 Histórico (${historico.length})` },
+              { id: "cfop",      label: "📄 CFOP" },
+              { id: "cst",       label: "🏷️ CST / CSOSN" },
+              { id: "sintegra",  label: "🔗 Sintegra" },
             ].map((aba) => (
               <button key={aba.id} onClick={() => setAbaAtiva(aba.id)} style={{
-                padding: "8px 20px", borderRadius: 9, fontSize: 13, fontWeight: 600,
-                background: abaAtiva === aba.id ? "var(--primary-glow)" : "transparent",
-                border: abaAtiva === aba.id ? "1px solid var(--primary)" : "1px solid transparent",
+                padding: "8px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                background: abaAtiva === aba.id ? "var(--primary-glow)" : "var(--bg-card)",
+                border: abaAtiva === aba.id ? "1px solid var(--primary)" : "1px solid var(--border)",
                 color: abaAtiva === aba.id ? "var(--primary)" : "var(--muted)",
-                cursor: "pointer",
+                cursor: "pointer", whiteSpace: "nowrap",
               }}>{aba.label}</button>
             ))}
           </div>
@@ -573,6 +604,222 @@ export default function CNPJPage() {
               )}
             </div>
           )}
+          {/* ══ ABA CFOP ══ */}
+          {abaAtiva === "cfop" && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Tabela CFOP</h2>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>Código Fiscal de Operações e Prestações — pesquise por código, descrição ou grupo</p>
+              </div>
+
+              {/* Filtros */}
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+                <input
+                  value={buscaCFOP} onChange={e => setBuscaCFOP(e.target.value)}
+                  placeholder="Buscar código ou descrição..."
+                  style={{ flex: 1, minWidth: 200, padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 9, fontSize: 13, color: "var(--text)", outline: "none" }}
+                />
+                {[
+                  { v:"todos", l:"Todos" },
+                  { v:"E",     l:"↙ Entradas" },
+                  { v:"S",     l:"↗ Saídas" },
+                ].map(f => (
+                  <button key={f.v} onClick={() => setFiltroDir(f.v)} style={{
+                    padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                    background: filtroDir === f.v ? (f.v === "E" ? "#22c55e18" : f.v === "S" ? "#3b82f618" : "var(--primary-glow)") : "var(--bg-card)",
+                    border: `1px solid ${filtroDir === f.v ? (f.v === "E" ? "#22c55e" : f.v === "S" ? "#3b82f6" : "var(--primary)") : "var(--border)"}`,
+                    color: filtroDir === f.v ? (f.v === "E" ? "#22c55e" : f.v === "S" ? "#3b82f6" : "var(--primary)") : "var(--muted)",
+                    cursor: "pointer",
+                  }}>{f.l}</button>
+                ))}
+                {[
+                  { v:"todos", l:"Todos" },
+                  { v:"est",   l:"Estadual" },
+                  { v:"int",   l:"Interestadual" },
+                  { v:"ext",   l:"Exterior" },
+                ].map(f => (
+                  <button key={f.v} onClick={() => setFiltroEscopo(f.v)} style={{
+                    padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                    background: filtroEscopo === f.v ? "var(--primary-glow)" : "var(--bg-card)",
+                    border: `1px solid ${filtroEscopo === f.v ? "var(--primary)" : "var(--border)"}`,
+                    color: filtroEscopo === f.v ? "var(--primary)" : "var(--muted)",
+                    cursor: "pointer",
+                  }}>{f.l}</button>
+                ))}
+              </div>
+
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>{cfopFiltrado.length} código{cfopFiltrado.length !== 1 ? "s" : ""} encontrado{cfopFiltrado.length !== 1 ? "s" : ""}</div>
+
+              {/* Tabela */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {cfopFiltrado.map(c => {
+                  const isEntrada = c.dir === "E";
+                  const escopoLabel = { est: "Estadual", int: "Interestadual", ext: "Exterior" }[c.escopo];
+                  const escopoCor   = { est: "#f59e0b", int: "#3b82f6", ext: "#8b5cf6" }[c.escopo];
+                  return (
+                    <div key={c.codigo} style={{
+                      display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap",
+                      background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10,
+                      padding: "12px 16px",
+                    }}>
+                      <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 800, color: isEntrada ? "#22c55e" : "#3b82f6", flexShrink: 0, width: 54 }}>{c.codigo}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>{c.desc}</div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{c.grupo}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 12, background: isEntrada ? "#22c55e18" : "#3b82f618", color: isEntrada ? "#22c55e" : "#3b82f6" }}>
+                          {isEntrada ? "↙ Entrada" : "↗ Saída"}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 12, background: `${escopoCor}18`, color: escopoCor }}>
+                          {escopoLabel}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {cfopFiltrado.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "40px 20px", background: "var(--bg-card)", borderRadius: 12, border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                    <div style={{ fontSize: 14, color: "var(--muted)" }}>Nenhum CFOP encontrado para esta busca</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ══ ABA CST / CSOSN ══ */}
+          {abaAtiva === "cst" && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>CST / CSOSN</h2>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>Código de Situação Tributária — ICMS, Simples Nacional (CSOSN) e PIS/COFINS</p>
+              </div>
+
+              {/* Sub-abas */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+                {[
+                  { id: "icms",      label: "ICMS (regime normal)" },
+                  { id: "csosn",     label: "CSOSN (Simples Nacional)" },
+                  { id: "piscofins", label: "PIS/COFINS" },
+                ].map(s => (
+                  <button key={s.id} onClick={() => { setAbaCST(s.id); setBuscaCST(""); }} style={{
+                    padding: "7px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                    background: abaCST === s.id ? "var(--primary-glow)" : "var(--bg-card)",
+                    border: `1px solid ${abaCST === s.id ? "var(--primary)" : "var(--border)"}`,
+                    color: abaCST === s.id ? "var(--primary)" : "var(--muted)", cursor: "pointer",
+                  }}>{s.label}</button>
+                ))}
+              </div>
+
+              <input
+                value={buscaCST} onChange={e => setBuscaCST(e.target.value)}
+                placeholder="Buscar por código ou descrição..."
+                style={{ width: "100%", marginBottom: 14, padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 9, fontSize: 13, color: "var(--text)", outline: "none", boxSizing: "border-box" }}
+              />
+
+              {/* Lista CST */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {cstFiltrado.map(c => {
+                  const cor = c.cor || (c.tipo === "entrada" ? "#22c55e" : c.tipo === "saída" ? "#3b82f6" : "var(--muted)");
+                  return (
+                    <div key={c.cst} style={{
+                      display: "flex", alignItems: "flex-start", gap: 12,
+                      background: "var(--bg-card)", border: "1px solid var(--border)", borderLeft: `4px solid ${cor}`,
+                      borderRadius: 10, padding: "12px 16px",
+                    }}>
+                      <div style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 900, color: cor, flexShrink: 0, width: 40 }}>{c.cst}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, lineHeight: 1.5 }}>{c.desc}</div>
+                        {c.tipo && (
+                          <span style={{ fontSize: 11, fontWeight: 700, marginTop: 4, display: "inline-block", padding: "1px 8px", borderRadius: 10, background: `${cor}18`, color: cor }}>
+                            {c.tipo === "entrada" ? "↙ Entrada" : "↗ Saída"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {cstFiltrado.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "40px 20px", background: "var(--bg-card)", borderRadius: 12, border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: 13, color: "var(--muted)" }}>Nenhum CST encontrado</div>
+                  </div>
+                )}
+              </div>
+
+              {abaCST === "icms" && (
+                <div style={{ marginTop: 16, padding: "12px 16px", background: "var(--bg-input)", borderRadius: 10, border: "1px solid var(--border)", fontSize: 12, color: "var(--muted)" }}>
+                  💡 <strong style={{ color: "var(--text)" }}>Regime normal:</strong> os dois primeiros dígitos do CST representam a origem da mercadoria (0 = Nacional, 1/2/3 = Estrangeira) combinados com o código acima.
+                </div>
+              )}
+              {abaCST === "csosn" && (
+                <div style={{ marginTop: 16, padding: "12px 16px", background: "#DF9F2010", borderRadius: 10, border: "1px solid #DF9F2030", fontSize: 12, color: "var(--muted)" }}>
+                  💡 <strong style={{ color: "var(--primary)" }}>CSOSN</strong> é utilizado exclusivamente por empresas optantes do <strong style={{ color: "var(--text)" }}>Simples Nacional</strong>. Substitui o CST do ICMS nas NF-e emitidas por essas empresas.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══ ABA SINTEGRA ══ */}
+          {abaAtiva === "sintegra" && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Sintegra — Consulta por Estado</h2>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>Acesse o cadastro de contribuintes do ICMS em cada SEFAZ estadual</p>
+              </div>
+
+              {/* Info box */}
+              <div style={{ background: "#3b82f610", border: "1px solid #3b82f630", borderRadius: 12, padding: "14px 18px", marginBottom: 20, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+                <strong style={{ color: "#60a5fa" }}>O que é o Sintegra?</strong> O Sistema Integrado de Informações sobre Operações Interestaduais com Mercadorias e Serviços permite consultar a situação cadastral de contribuintes do ICMS perante a SEFAZ de cada estado. Essencial para validar clientes/fornecedores antes de emitir NF-e.
+              </div>
+
+              {/* Seletor de UF com destaque se empresa consultada */}
+              {empresa && (
+                <div style={{ padding: "10px 14px", background: "var(--primary-glow)", border: "1px solid var(--primary)40", borderRadius: 10, fontSize: 13, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>🏢</span>
+                  <span>Última empresa consultada: <strong style={{ color: "var(--primary)" }}>{empresa.razao_social}</strong> — UF <strong style={{ color: "var(--primary)" }}>{empresa.uf}</strong> pré-selecionada</span>
+                </div>
+              )}
+
+              {/* Grade de estados */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+                {SINTEGRA_ESTADOS.map(e => {
+                  const ativo = ufSintegra === e.uf;
+                  return (
+                    <a
+                      key={e.uf}
+                      href={e.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex", flexDirection: "column", gap: 4,
+                        padding: "14px 16px", borderRadius: 12, textDecoration: "none",
+                        background: ativo ? "var(--primary-glow)" : "var(--bg-card)",
+                        border: `1.5px solid ${ativo ? "var(--primary)" : "var(--border)"}`,
+                        transition: "border-color 0.15s",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={ev => { if (!ativo) ev.currentTarget.style.borderColor = "var(--primary)60"; }}
+                      onMouseLeave={ev => { if (!ativo) ev.currentTarget.style.borderColor = "var(--border)"; }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: ativo ? "var(--primary)" : "var(--text)" }}>{e.uf}</span>
+                        {ativo && <span style={{ fontSize: 10, fontWeight: 700, background: "var(--primary)", color: "#000", padding: "1px 6px", borderRadius: 8 }}>✓</span>}
+                        <span style={{ fontSize: 11, color: "var(--muted)" }}>↗</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.3 }}>{e.nome}</div>
+                      <div style={{ fontSize: 10, color: ativo ? "var(--primary)" : "var(--muted)", opacity: 0.8 }}>{e.obs}</div>
+                    </a>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: 16, padding: "12px 16px", background: "var(--bg-input)", borderRadius: 10, border: "1px solid var(--border)", fontSize: 12, color: "var(--muted)" }}>
+                ⚠️ Os links direcionam para os portais oficiais das SEFAZs estaduais. Alguns estados podem exigir login ou ter URLs temporariamente alteradas.
+              </div>
+            </div>
+          )}
+
         </div>
       </Layout>
 

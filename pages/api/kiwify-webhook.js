@@ -35,14 +35,72 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ── Mapeamento de checkout codes → plano / meses ────────────────────────────
+// SOMENTE os 6 checkouts do produto "GJ Hub Contábil"
 const CHECKOUT_PLANO = {
-  NAhXR65: { plano: "essencial",    meses: 12 }, // anual
-  mE2zB5V: { plano: "essencial",    meses: 1  }, // mensal
-  "6Rppp7j": { plano: "profissional", meses: 12 }, // anual
-  RBCmS4k: { plano: "profissional", meses: 1  }, // mensal
-  xXQpNPy: { plano: "especialista", meses: 12 }, // anual
-  GRNueqT: { plano: "especialista", meses: 1  }, // mensal
+  NAhXR65:  { plano: "essencial",    meses: 12 }, // Essencial Anual
+  mE2zB5V:  { plano: "essencial",    meses: 1  }, // Essencial Mensal
+  "6Rppp7j":{ plano: "profissional", meses: 12 }, // Profissional Anual
+  RBCmS4k:  { plano: "profissional", meses: 1  }, // Profissional Mensal
+  xXQpNPy:  { plano: "especialista", meses: 12 }, // Especialista Anual
+  GRNueqT:  { plano: "especialista", meses: 1  }, // Especialista Mensal
 };
+
+// Conjunto de checkout codes válidos (para lookup rápido)
+const CHECKOUT_CODES_VALIDOS = new Set(Object.keys(CHECKOUT_PLANO));
+
+// Palavras-chave que identificam o produto GJ Hub Contábil pelo nome
+// (normalizado sem acentos para comparação segura)
+const PALAVRAS_PRODUTO_HUB = ["gj hub contabil", "hub contabil", "gj hub"];
+
+// Planos reconhecidos pelo nome da oferta (Simples Nacional dos nossos planos)
+const PLANO_NOMES_VALIDOS = ["essencial", "profissional", "especialista"];
+
+/**
+ * Verifica se o evento é realmente do produto GJ Hub Contábil.
+ * Usa três camadas de verificação (defense-in-depth):
+ *   1. checkout_link contém um dos 6 códigos conhecidos → aprovado direto
+ *   2. Nome do produto contém palavras-chave do Hub
+ *   3. Nome do plano/oferta contém tipo (essencial/profissional/especialista)
+ *      E periodicidade (mensal/anual)
+ */
+function isProdutoAutorizado(ev) {
+  // 1. Checkout code reconhecido → definitivamente nosso produto
+  const link = ev?.checkout_link || "";
+  for (const code of CHECKOUT_CODES_VALIDOS) {
+    if (link.includes(code)) return true;
+  }
+
+  // Helper: normaliza string (minúsculas + remove acentos)
+  const norm = (s) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  // 2. Nome do produto contém palavras-chave do GJ Hub Contábil
+  const nomeProduto = norm(
+    ev?.Product?.name   ||
+    ev?.product?.name   ||
+    ev?.product_name    || ""
+  );
+  for (const palavra of PALAVRAS_PRODUTO_HUB) {
+    if (nomeProduto.includes(palavra)) return true;
+  }
+
+  // 3. Nome do plano contém tipo reconhecido + periodicidade
+  const nomePlano = norm(
+    ev?.Subscription?.plan?.name ||
+    ev?.Offer?.name              ||
+    ev?.offer?.name              ||
+    ev?.plan?.name               || ""
+  );
+  const temTipo = PLANO_NOMES_VALIDOS.some((p) => nomePlano.includes(p));
+  const temFreq =
+    nomePlano.includes("mensal")   ||
+    nomePlano.includes("anual")    ||
+    nomePlano.includes("monthly")  ||
+    nomePlano.includes("yearly");
+  if (temTipo && temFreq) return true;
+
+  return false;
+}
 
 const PLANO_LABELS = {
   essencial:    { nome: "Essencial",    cor: "#22c55e", ferramentas: "Portal de Notícias, Simulador Tributário e Calendário Fiscal" },
@@ -259,7 +317,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "e-mail ausente" });
   }
 
-  // 5. Detecta plano e período a partir do checkout_link ou nome do plano
+  // 5. Valida se o evento é do produto GJ Hub Contábil (barreira de segurança)
+  if (!isProdutoAutorizado(ev)) {
+    const nomeProd = ev?.Product?.name || ev?.product?.name || ev?.product_name || "desconhecido";
+    console.warn(
+      `[webhook] PRODUTO NÃO AUTORIZADO — ignorando "${tipo}" para "${email}". ` +
+      `Produto: "${nomeProd}" | checkout_link: "${ev?.checkout_link || ""}"`
+    );
+    // Retorna 200 para Kiwify não ficar re-tentando o evento
+    return res.status(200).json({ ok: true, aviso: "produto não autorizado para este webhook" });
+  }
+
+  // 6. Detecta plano e período a partir do checkout_link ou nome do plano
   const { plano, meses } = detectarPlanoMeses(ev);
   console.log(`[webhook] plano="${plano}" | meses=${meses}`);
 

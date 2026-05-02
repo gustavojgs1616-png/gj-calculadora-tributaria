@@ -53,14 +53,14 @@ export default function HomePage() {
     },
     {
       id: "honorarios",
-      label: "Calculadora de Honorários",
+      label: "Precificação Contábil",
       desc: "Calcule honorários contábeis por estado, regime tributário, faturamento e serviços. Gere propostas em PDF.",
       cor: "#f97316",
       rota: "/honorarios",
     },
     {
       id: "cnpj",
-      label: "Consulta CNPJ",
+      label: "Consulta Fiscal",
       desc: "Consulte dados completos de qualquer empresa: razão social, sócios, CNAEs, situação cadastral e endereço.",
       cor: "#8b5cf6",
       rota: "/cnpj",
@@ -81,8 +81,8 @@ export default function HomePage() {
     },
     {
       id: "icmsst",
-      label: "ICMS-ST",
-      desc: "Calcule o ICMS por Substituição Tributária em operações interestaduais com MVA ajustada, alíquotas automáticas e relatório em PDF.",
+      label: "ICMS Interestadual",
+      desc: "Calcule ICMS-ST e DIFAL em operações interestaduais com MVA ajustada, alíquotas automáticas e relatório em PDF.",
       cor: "#818cf8",
       rota: "/icmsst",
     },
