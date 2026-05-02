@@ -221,7 +221,7 @@ export default function Layout({ children, user, abaAtiva, setAba }) {
 
   const handleSair = async () => {
     await supabase.auth.signOut();
-    router.push("/");
+    router.push("/login");
   };
 
   const nomeExibido = user?.user_metadata?.nome || user?.email?.split("@")[0] || "";

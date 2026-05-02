@@ -19,6 +19,8 @@ const PLANOS_INFO = {
     precoAnual: 397,
     precoMesAnual: "33,08",
     precoMensal: "47",
+    parcelas: "41,06",
+    parcelasTotal: "492,72",
     economiaPorc: "30%",
     cta: "Começar no Essencial →",
     cor: "#22c55e",
@@ -30,6 +32,8 @@ const PLANOS_INFO = {
     precoAnual: 797,
     precoMesAnual: "66,42",
     precoMensal: "97",
+    parcelas: "82,43",
+    parcelasTotal: "989,16",
     economiaPorc: "32%",
     cta: "Escolher Profissional →",
     cor: "#818cf8",
@@ -41,6 +45,8 @@ const PLANOS_INFO = {
     precoAnual: 1397,
     precoMesAnual: "116,42",
     precoMensal: "167",
+    parcelas: "144,48",
+    parcelasTotal: "1.733,76",
     economiaPorc: "30%",
     cta: "Quero o Especialista →",
     cor: "#DF9F20",
@@ -174,16 +180,18 @@ function PricingCard({ planKey, planoAtual, isTrial, diasTrial }) {
           <div style={{ fontSize: 10, fontWeight: 700, color: info.cor, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
             ★ Plano Anual — melhor valor
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 2, marginBottom: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>R$</span>
-            <span style={{ fontSize: 40, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-              {info.precoAnual.toLocaleString("pt-BR")}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2, marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>12x de R$</span>
+            <span style={{ fontSize: 38, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
+              {info.parcelas}
             </span>
-            <span style={{ fontSize: 13, color: "var(--muted)", marginLeft: 3 }}>/ano</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--muted)" }}>
-            equivale a R$ {info.precoMesAnual}/mês ·{" "}
+          <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>
+            ou R$ {info.precoAnual.toLocaleString("pt-BR")} à vista ·{" "}
             <span style={{ color: "#22c55e", fontWeight: 700 }}>economia de {info.economiaPorc}</span>
+          </div>
+          <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
+            equivale a R$ {info.precoMesAnual}/mês
           </div>
         </div>
 
@@ -358,7 +366,7 @@ export default function AssinaturaPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/"); return; }
+      if (!session) { router.replace("/login"); return; }
       setUser(session.user);
     });
   }, [router]);

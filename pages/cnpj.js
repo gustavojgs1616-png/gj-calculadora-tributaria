@@ -121,7 +121,7 @@ export default function CNPJPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/"); return; }
+      if (!session) { router.replace("/login"); return; }
       setUser(session.user);
       carregarHistorico(session.user.id);
     });

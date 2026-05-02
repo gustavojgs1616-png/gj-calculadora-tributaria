@@ -96,7 +96,7 @@ export default function PerfilPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/"); return; }
+      if (!session) { router.replace("/login"); return; }
       setUser(session.user);
       const meta = session.user.user_metadata || {};
       setNome(meta.nome_completo || "");

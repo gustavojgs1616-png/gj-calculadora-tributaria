@@ -12,11 +12,11 @@ export default function HomePage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/"); return; }
+      if (!session) { router.replace("/login"); return; }
       setUser(session.user);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) router.replace("/");
+      if (!session) router.replace("/login");
       else setUser(session.user);
     });
     return () => subscription.unsubscribe();

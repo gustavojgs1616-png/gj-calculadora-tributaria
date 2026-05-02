@@ -600,7 +600,7 @@ export default function HonorariosPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/"); return; }
+      if (!session) { router.replace("/login"); return; }
       setUser(session.user);
     });
     // Pre-fill from CNPJ page if applicable

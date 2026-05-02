@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
                   Este link de recuperação não é mais válido.<br />Solicite um novo email de recuperação.
                 </p>
                 <button
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/login")}
                   style={{
                     width: "100%", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 700,
                     background: "linear-gradient(135deg, #DF9F20, #B27F1A)", border: "none",
@@ -201,7 +201,7 @@ export default function ResetPasswordPage() {
 
                 <div style={{ marginTop: 20, textAlign: "center" }}>
                   <button
-                    onClick={() => router.push("/")}
+                    onClick={() => router.push("/login")}
                     style={{ background: "none", border: "none", color: "#6670B8", fontSize: 13, cursor: "pointer" }}
                   >
                     ← Voltar para o login
