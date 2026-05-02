@@ -5,6 +5,8 @@ import { supabase } from "../lib/supabaseClient";
 import { calcSimples, calcLP, calcLR, fmt, pct, parseVal, fmtInput, fmtToInput } from "../components/calculos";
 import { gerarPDF } from "../components/gerarPDF";
 import Layout from "../components/Layout";
+import { useAssinatura } from "../lib/AssinaturaContext";
+import CardBloqueado from "../components/CardBloqueado";
 
 // ─── Máscara CNPJ ─────────────────────────────────────────────────────────────
 function maskCNPJ(v) {
@@ -118,17 +120,73 @@ function RegimeCard({ r, maxAnual, melhor }) {
         {expandido ? "▲ Ocultar composição" : "▼ Ver composição detalhada"}
       </button>
 
+      {/* Créditos abatidos — PIS/COFINS e/ou ICMS */}
+      {r.creditoTotal > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "#0f2d1a", border: "1px solid #22c55e40",
+          borderRadius: 8, padding: "8px 12px", marginBottom: 10,
+        }}>
+          <span style={{ fontSize: 16 }}>💳</span>
+          <div>
+            <div style={{ fontSize: 11, color: "#86efac", fontWeight: 700 }}>
+              {r.creditoLabel || "Créditos s/ insumos abatidos"}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#22c55e" }}>
+              − {fmt(r.creditoTotal)}/ano
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ICMS/ISS já incluso no Simples */}
+      {r.icmsIssNoDAS && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "#0d1f13", border: "1px solid #22c55e30",
+          borderRadius: 8, padding: "7px 12px", marginBottom: 10,
+          fontSize: 11, color: "#86efac",
+        }}>
+          <span>✓</span>
+          <span>ICMS e ISS já estão incluídos no DAS unificado</span>
+        </div>
+      )}
+
+      <button onClick={() => setExpandido(!expandido)}
+        style={{ background: "none", color: "var(--muted)", fontSize: 12, padding: "4px 0", width: "100%", textAlign: "left" }}>
+        {expandido ? "▲ Ocultar composição" : "▼ Ver composição detalhada"}
+      </button>
+
       {expandido && (
         <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-          {r.itens.map((item, i) => (
-            <div key={i} style={{
-              display: "flex", justifyContent: "space-between",
-              padding: "6px 0", borderBottom: "1px solid var(--border-soft)", fontSize: 13,
-            }}>
-              <span style={{ color: "var(--text-dim)" }}>{item.label}</span>
-              <span style={{ fontWeight: 600 }}>{fmt(item.valor)}</span>
-            </div>
-          ))}
+          {r.itens.map((item, i) => {
+            const isCredito = item.valor < 0;
+            const isLiquido = item.label.includes("(=)");
+            return (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between",
+                padding: "5px 0", borderBottom: "1px solid var(--border-soft)", fontSize: 13,
+                background: isLiquido ? "var(--bg-input)" : "transparent",
+                borderRadius: isLiquido ? 4 : 0,
+                padding: isLiquido ? "6px 8px" : "5px 0",
+                marginBottom: isLiquido ? 4 : 0,
+              }}>
+                <span style={{
+                  color: isCredito ? "#22c55e" : isLiquido ? "var(--text)" : "var(--text-dim)",
+                  fontWeight: isLiquido ? 700 : 400,
+                  paddingLeft: item.label.startsWith("  ") ? 12 : 0,
+                }}>
+                  {item.label.trim()}
+                </span>
+                <span style={{
+                  fontWeight: isLiquido ? 700 : 600,
+                  color: isCredito ? "#22c55e" : isLiquido ? "var(--text)" : "inherit",
+                }}>
+                  {isCredito ? `− ${fmt(Math.abs(item.valor))}` : fmt(item.valor)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -427,6 +485,193 @@ function AbaReforma({ dadosCalc }) {
   );
 }
 
+// ─── PARECER METODOLÓGICO ─────────────────────────────────────────────────────
+function ParecerMetodologico({ resultados, fatAnual, folhaVal, custosVal, atividade, aliqICMSVenda = 0, aliqICMSCompra = 0, aliqISS = 0 }) {
+  const [aberto, setAberto] = useState(false);
+
+  const atividadeLabel = { comercio: "Comércio", industria: "Indústria", servicos: "Serviços", contabil: "Contábil/Jurídico" };
+  const presuncaoLP = (atividade === "comercio" || atividade === "industria") ? 8 : 32;
+  const isServico = atividade === "servicos" || atividade === "contabil";
+  const folhaAnual = folhaVal * 12;
+  const custosAnual = custosVal * 12;
+  const lucroLP = fatAnual * (presuncaoLP / 100);
+  const lucroLR = fatAnual - custosAnual - folhaAnual;
+  const aliqCred = aliqICMSCompra > 0 ? aliqICMSCompra : aliqICMSVenda;
+  const icmsDebito = !isServico && aliqICMSVenda > 0 ? fatAnual * (aliqICMSVenda / 100) : 0;
+  const icmsCredito = !isServico && aliqCred > 0 && icmsDebito > 0 ? Math.min(custosAnual * (aliqCred / 100), icmsDebito) : 0;
+  const icmsLiq = Math.max(0, icmsDebito - icmsCredito);
+  const issTotal = isServico && aliqISS > 0 ? fatAnual * (aliqISS / 100) : 0;
+
+  const pareceres = [
+    {
+      regime: "Simples Nacional",
+      cor: "#22c55e",
+      icone: "🟢",
+      linhas: [
+        `Regime unificado que concentra IRPJ, CSLL, PIS, COFINS, INSS, ICMS e ISS em uma única guia (DAS).`,
+        `Com faturamento anual de ${fmt(fatAnual)}, a alíquota efetiva é calculada pela tabela progressiva do Simples — Anexo ${atividade === "comercio" ? "I (Comércio)" : atividade === "industria" ? "II (Indústria)" : "III/V (Serviços)"}.`,
+        !isServico && aliqICMSVenda > 0
+          ? `✓ ICMS (venda ${aliqICMSVenda}% / compra ${aliqCred}%) já está embutido no DAS — nenhuma guia separada é necessária.`
+          : isServico && aliqISS > 0
+          ? `✓ ISS (${aliqISS}%) já está embutido no DAS — nenhuma guia separada é necessária.`
+          : `ICMS (comércio/indústria) e ISS (serviços) estão incorporados na alíquota do DAS.`,
+        fatAnual > 4800000 ? `⚠️ Faturamento acima de R$ 4,8 milhões — empresa excluída do Simples Nacional.` : `Indicado para empresas com margens menores ou folha de pagamento reduzida.`,
+      ],
+    },
+    {
+      regime: "Lucro Presumido",
+      cor: "#f5a623",
+      icone: "🟡",
+      linhas: [
+        `A Receita Federal presume que ${presuncaoLP}% do faturamento é lucro (percentual fixo para ${atividadeLabel[atividade] || "Serviços"}).`,
+        `Base de cálculo do IRPJ/CSLL: ${fmt(fatAnual)} × ${presuncaoLP}% = ${fmt(lucroLP)}.`,
+        `Sobre essa base: IRPJ 15%${lucroLP > 240000 ? ` + Adicional 10% sobre ${fmt(lucroLP - 240000)} excedentes` : ""} + CSLL 9%.`,
+        `PIS (0,65%) e COFINS (3%) incidem sobre o faturamento bruto (regime cumulativo — sem aproveitamento de créditos).`,
+        folhaVal > 0 ? `Encargos patronais (INSS 20% + Terceiros 5,8% + FGTS 8%) calculados sobre folha de ${fmt(folhaVal)}/mês.` : `Sem folha de pagamento informada — encargos não computados.`,
+        ...(icmsLiq > 0
+          ? [`ICMS: débito de ${fmt(icmsDebito)}/ano (${aliqICMSVenda}% venda s/ faturamento) − crédito de ${fmt(icmsCredito)}/ano (${aliqCred}% compra s/ custos de ${fmt(custosVal)}/mês) = ICMS líquido de ${fmt(icmsLiq)}/ano.${aliqICMSCompra > 0 && aliqICMSCompra !== aliqICMSVenda ? ` 💳 Alíquota de compra (${aliqICMSCompra}%) menor que a de venda (${aliqICMSVenda}%) — diferença que gera crédito menor.` : " 💳 O crédito sobre insumos/mercadorias reduz o ICMS a recolher."}`]
+          : !isServico && aliqICMSVenda > 0
+          ? [`ICMS venda ${aliqICMSVenda}%: débito de ${fmt(icmsDebito)}/ano. Sem crédito a abater (custos não informados).`]
+          : []),
+        ...(issTotal > 0
+          ? [`ISS: ${aliqISS}% s/ faturamento bruto = ${fmt(issTotal)}/ano. ISS não gera crédito — incide integralmente sobre a receita de serviços.`]
+          : []),
+      ],
+    },
+    {
+      regime: "Lucro Real",
+      cor: "#3b82f6",
+      icone: "🔵",
+      linhas: [
+        `Tributação sobre o lucro efetivamente apurado, não sobre uma presunção.`,
+        `Lucro base = Faturamento (${fmt(fatAnual)}) − Custos (${fmt(custosAnual)}) − Folha (${fmt(folhaAnual)}) = ${fmt(lucroLR)}.`,
+        lucroLR > 0
+          ? `Sobre o lucro de ${fmt(lucroLR)}: IRPJ 15%${lucroLR > 240000 ? ` + Adicional 10% sobre ${fmt(lucroLR - 240000)} excedentes` : ""} + CSLL 9%.`
+          : `⚠️ Lucro apurado negativo — IRPJ e CSLL zerados. Verifique os custos informados.`,
+        `PIS/COFINS não-cumulativo: débito de ${fmt(fatAnual * 0.0925)}/ano sobre o faturamento, abatido pelos créditos sobre compras/insumos de ${fmt(custosAnual * 0.0925)}/ano → PIS/COFINS líquido: ${fmt(Math.max(0, (fatAnual - custosAnual) * 0.0925))}/ano.`,
+        custosAnual > 0
+          ? `💳 Créditos de PIS/COFINS de ${fmt(custosAnual * 0.0925)}/ano calculados com base nos custos de ${fmt(custosVal)}/mês — base elegível no regime não-cumulativo.`
+          : `⚠️ Sem custos informados — créditos de PIS/COFINS não computados. Informe os custos mensais para uma estimativa mais precisa.`,
+        folhaVal > 0 ? `Encargos patronais sobre folha de ${fmt(folhaVal)}/mês: INSS 20%, Terceiros 5,8%, FGTS 8%. A folha não gera crédito de PIS/COFINS ou ICMS.` : `Sem folha de pagamento informada — encargos não computados.`,
+        ...(icmsLiq > 0
+          ? [`ICMS: débito de ${fmt(icmsDebito)}/ano (${aliqICMSVenda}% venda) − crédito de ${fmt(icmsCredito)}/ano (${aliqCred}% compra s/ insumos de ${fmt(custosVal)}/mês) = ICMS líquido de ${fmt(icmsLiq)}/ano. 💳 No Lucro Real, o crédito de ICMS compra foi somado aos créditos de PIS/COFINS no total abatido.`]
+          : !isServico && aliqICMSVenda > 0
+          ? [`ICMS venda ${aliqICMSVenda}%: débito de ${fmt(icmsDebito)}/ano. Sem crédito a abater (custos não informados).`]
+          : []),
+        ...(issTotal > 0
+          ? [`ISS: ${aliqISS}% s/ faturamento = ${fmt(issTotal)}/ano. ISS não gera crédito fiscal.`]
+          : []),
+      ],
+    },
+  ];
+
+  return (
+    <div style={{
+      background: "var(--bg-card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      overflow: "hidden",
+    }}>
+      {/* Header */}
+      <button
+        onClick={() => setAberto(v => !v)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center",
+          justifyContent: "space-between", padding: "16px 20px",
+          background: "none", border: "none", cursor: "pointer", gap: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>📋</span>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Como calculamos</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>
+              Metodologia e base legal de cada regime
+            </div>
+          </div>
+        </div>
+        <span style={{ color: "var(--muted)", fontSize: 13, flexShrink: 0 }}>
+          {aberto ? "▲ Fechar" : "▼ Ver parecer"}
+        </span>
+      </button>
+
+      {/* Conteúdo */}
+      {aberto && (
+        <div style={{ borderTop: "1px solid var(--border)", padding: "20px" }}>
+
+          {/* Dados base */}
+          <div style={{
+            background: "var(--bg-input)", borderRadius: 10,
+            padding: "12px 16px", marginBottom: 20,
+            display: "flex", gap: 24, flexWrap: "wrap",
+          }}>
+            {[
+              ["Faturamento Anual", fmt(fatAnual)],
+              ["Folha Mensal", folhaVal > 0 ? fmt(folhaVal) : "Não informada"],
+              ["Custos Mensais", custosVal > 0 ? fmt(custosVal) : "Não informados"],
+              ["Atividade", atividadeLabel[atividade] || atividade],
+            ].map(([l, v]) => (
+              <div key={l}>
+                <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{l}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Um bloco por regime */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {pareceres.map((p) => {
+              const reg = resultados.find(r => r.regime === p.regime);
+              if (!reg && p.regime === "Simples Nacional" && fatAnual > 4800000) {
+                // Mostra aviso mesmo sem resultado
+              } else if (!reg) return null;
+              return (
+                <div key={p.regime} style={{
+                  borderLeft: `3px solid ${p.cor}`,
+                  paddingLeft: 14,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: p.cor }}>{p.regime}</span>
+                    {reg && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 700,
+                        background: `${p.cor}18`, color: p.cor,
+                        padding: "2px 8px", borderRadius: 10,
+                      }}>
+                        {pct(reg.aliqEfetiva)} efetivo · {fmt(reg.anual)}/ano
+                      </span>
+                    )}
+                  </div>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 5 }}>
+                    {p.linhas.map((linha, i) => (
+                      <li key={i} style={{
+                        fontSize: 12, color: "var(--text-dim)", lineHeight: 1.6,
+                        display: "flex", gap: 8, alignItems: "flex-start",
+                      }}>
+                        <span style={{ color: p.cor, flexShrink: 0, marginTop: 2 }}>›</span>
+                        <span>{linha}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Aviso */}
+          <div style={{
+            marginTop: 18, padding: "10px 14px",
+            background: "var(--bg-input)", borderRadius: 8,
+            fontSize: 11, color: "var(--muted)", lineHeight: 1.6,
+          }}>
+            ⚠️ <strong style={{ color: "var(--text)" }}>Importante:</strong> Esta simulação utiliza alíquotas padrão e não considera créditos tributários, benefícios fiscais estaduais, incentivos setoriais ou deduções específicas. Para planejamento tributário definitivo, consulte um contador.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── ABA CALCULADORA ───────────────────────────────────────────────────────────
 function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
   const [etapa, setEtapa] = useState(1);
@@ -436,6 +681,9 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
   const [atividade, setAtividade] = useState("servicos");
   const [folha, setFolha] = useState("");
   const [custos, setCustos] = useState("");
+  const [aliqICMSVenda, setAliqICMSVenda] = useState("");
+  const [aliqICMSCompra, setAliqICMSCompra] = useState("");
+  const [aliqISS, setAliqISS] = useState("");
   const [resultados, setResultados] = useState([]);
   const [melhor, setMelhor] = useState(null);
   const [economia, setEconomia] = useState(0);
@@ -446,9 +694,13 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
 
   const calcular = async () => {
     const atv = atividade === "contabil" ? "servicos" : atividade;
+    const isServico = atividade === "servicos" || atividade === "contabil";
+    const icmsVenda  = !isServico ? (parseFloat(aliqICMSVenda.replace(",", "."))  || 0) : 0;
+    const icmsCompra = !isServico ? (parseFloat(aliqICMSCompra.replace(",", ".")) || 0) : 0;
+    const issVal     = isServico  ? (parseFloat(aliqISS.replace(",", "."))        || 0) : 0;
     const simples = calcSimples(fatAnual, atv);
-    const lp = calcLP(fatAnual, atv, folhaVal);
-    const lr = calcLR(fatAnual, folhaVal, custosVal);
+    const lp = calcLP(fatAnual, atv, folhaVal, custosVal, icmsVenda, icmsCompra, issVal);
+    const lr = calcLR(fatAnual, folhaVal, custosVal, atv, icmsVenda, icmsCompra, issVal);
     const todos = [simples, lp, lr].filter(Boolean);
     todos.sort((a, b) => a.anual - b.anual);
 
@@ -471,6 +723,7 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
         folha_mensal: folhaVal, custos_mensais: custosVal,
         regime_recomendado: melhorR.regime, imposto_anual: melhorR.anual,
         aliquota_efetiva: melhorR.aliqEfetiva, resultados: todos,
+        aliq_icms_venda: icmsVenda, aliq_icms_compra: icmsCompra, aliq_iss: issVal,
       });
       if (onSimulacaoSalva) onSimulacaoSalva();
     } catch (_) {}
@@ -479,10 +732,15 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
   const nova = () => {
     setEtapa(1); setResultados([]); setMelhor(null); setEconomia(0);
     setEmpresa(""); setCnpj(""); setFatMensal(""); setFolha(""); setCustos(""); setAtividade("servicos");
+    setAliqICMSVenda(""); setAliqICMSCompra(""); setAliqISS("");
   };
 
   const maxAnual = resultados.length > 0 ? Math.max(...resultados.map((r) => r.anual)) : 1;
-  const dadosPDF = { empresa, faturamentoAnual: fatAnual, atividade, folha: folhaVal, custos: custosVal, resultados, melhor, economia };
+  const isServicoPDF = atividade === "servicos" || atividade === "contabil";
+  const dadosPDF = { empresa, faturamentoAnual: fatAnual, atividade, folha: folhaVal, custos: custosVal, resultados, melhor, economia,
+    aliqICMSVenda: !isServicoPDF ? (parseFloat(aliqICMSVenda.replace(",", ".")) || 0) : 0,
+    aliqICMSCompra: !isServicoPDF ? (parseFloat(aliqICMSCompra.replace(",", ".")) || 0) : 0,
+    aliqISS: isServicoPDF ? (parseFloat(aliqISS.replace(",", ".")) || 0) : 0 };
 
   return (
     <div style={{ padding: "32px 28px", maxWidth: 720, margin: "0 auto" }}>
@@ -592,8 +850,74 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
               <label className="label">Custos e despesas mensais (R$)</label>
               <input type="tel" inputMode="numeric" value={custos}
                 onChange={(e) => setCustos(fmtInput(e.target.value))} placeholder="Digite os dígitos" />
-              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Exceto folha — aluguel, fornecedores, etc.</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Exceto folha — aluguel, fornecedores, insumos, etc.</div>
             </div>
+
+            {/* ICMS (comércio/indústria) — DOIS campos: venda e compra */}
+            {(atividade === "comercio" || atividade === "industria") ? (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <label className="label" style={{ marginBottom: 0 }}>ICMS</label>
+                  <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400 }}>(opcional)</span>
+                </div>
+                <div style={{
+                  background: "var(--bg-input)", border: "1px solid var(--border)",
+                  borderRadius: 10, padding: "12px 14px",
+                }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+                        Venda (débito)
+                      </div>
+                      <input
+                        type="text" inputMode="decimal"
+                        value={aliqICMSVenda}
+                        onChange={(e) => setAliqICMSVenda(e.target.value.replace(/[^\d.,]/g, ""))}
+                        placeholder="Ex: 17"
+                      />
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, lineHeight: 1.4 }}>
+                        SC/RS: 17% · SP/MG: 18%<br/>RJ: 20% · Interestadual: 12%
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+                        Compra (crédito)
+                      </div>
+                      <input
+                        type="text" inputMode="decimal"
+                        value={aliqICMSCompra}
+                        onChange={(e) => setAliqICMSCompra(e.target.value.replace(/[^\d.,]/g, ""))}
+                        placeholder="Ex: 12"
+                      />
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, lineHeight: 1.4 }}>
+                        Comprou de outro estado: 12%<br/>Dentro do mesmo estado: igual à venda
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10, padding: "7px 10px", background: "var(--bg-deep)", borderRadius: 7, fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+                    💡 <strong style={{ color: "var(--text)" }}>Ex. SC:</strong> vende a 17% (débito) e comprou de SP a 12% (crédito) → ICMS líquido = débito − crédito
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* ISS (serviços/contábil) — campo único sem crédito */
+              <div>
+                <label className="label">
+                  Alíquota ISS (%)
+                  <span style={{ color: "var(--muted)", fontWeight: 400, marginLeft: 6 }}>(opcional)</span>
+                </label>
+                <input
+                  type="text" inputMode="decimal"
+                  value={aliqISS}
+                  onChange={(e) => setAliqISS(e.target.value.replace(/[^\d.,]/g, ""))}
+                  placeholder="Ex: 5"
+                  style={{ maxWidth: 160 }}
+                />
+                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+                  Varia por município · Geralmente entre 2% e 5% · ISS não gera crédito
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
             <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setEtapa(1)}>← Voltar</button>
@@ -634,6 +958,33 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
             </div>
           )}
 
+          {/* Resumo de parâmetros usados */}
+          {(() => {
+            const isSvc = atividade === "servicos" || atividade === "contabil";
+            const iv = !isSvc ? (parseFloat(aliqICMSVenda.replace(",", ".")) || 0) : 0;
+            const ic = !isSvc ? (parseFloat(aliqICMSCompra.replace(",", ".")) || 0) : 0;
+            const sv = isSvc  ? (parseFloat(aliqISS.replace(",", "."))  || 0) : 0;
+            if (!iv && !sv) return null;
+            return (
+              <div style={{
+                background: "var(--bg-input)", border: "1px solid var(--border)",
+                borderRadius: 10, padding: "10px 16px",
+                display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: "var(--muted)",
+                alignItems: "center",
+              }}>
+                <span>📊 ICMS/ISS na simulação:</span>
+                {iv > 0 && (
+                  <span>
+                    <span style={{ color: "var(--primary)", fontWeight: 700 }}>Débito (venda): {iv}%</span>
+                    {ic > 0 && <span style={{ color: "#22c55e", fontWeight: 700 }}> · Crédito (compra): {ic}%</span>}
+                    {!ic && <span style={{ color: "var(--muted)" }}> · crédito = mesma alíquota</span>}
+                  </span>
+                )}
+                {sv > 0 && <span style={{ color: "var(--primary)", fontWeight: 700 }}>ISS {sv}% sobre faturamento</span>}
+              </div>
+            );
+          })()}
+
           {/* Cards */}
           <div>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Comparativo Completo</h3>
@@ -647,6 +998,18 @@ function AbaCalculadora({ user, onSimulacaoSalva, onCalculado }) {
               ⚠️ <strong>Simples Nacional não disponível</strong> — faturamento acima de R$ 4,8 milhões.
             </div>
           )}
+
+          {/* Parecer metodológico */}
+          <ParecerMetodologico
+            resultados={resultados}
+            fatAnual={fatAnual}
+            folhaVal={folhaVal}
+            custosVal={custosVal}
+            atividade={atividade}
+            aliqICMSVenda={parseFloat(aliqICMSVenda.replace(",", ".")) || 0}
+            aliqICMSCompra={parseFloat(aliqICMSCompra.replace(",", ".")) || 0}
+            aliqISS={parseFloat(aliqISS.replace(",", ".")) || 0}
+          />
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button className="btn-ghost" style={{ flex: 1, borderColor: "var(--primary)", color: "var(--primary)" }} onClick={() => gerarPDF(dadosPDF)}>
@@ -800,6 +1163,7 @@ export default function CalculadoraPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [simulacoes, setSimulacoes] = useState([]);
+  const { pode, carregando: carregandoPlano } = useAssinatura();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -824,7 +1188,13 @@ export default function CalculadoraPage() {
     setSimulacoes((prev) => prev.filter((s) => s.id !== id));
   };
 
-  if (!user) return null;
+  if (!user || carregandoPlano) return null;
+
+  if (!pode("simulador")) return (
+    <Layout user={user}>
+      <CardBloqueado ferramenta="simulador" planoNecessario="essencial" />
+    </Layout>
+  );
 
   return (
     <>

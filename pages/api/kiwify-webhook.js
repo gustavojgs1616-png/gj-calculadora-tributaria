@@ -105,7 +105,7 @@ function isProdutoAutorizado(ev) {
 const PLANO_LABELS = {
   essencial:    { nome: "Essencial",    cor: "#22c55e", ferramentas: "Portal de Notícias, Simulador Tributário e Calendário Fiscal" },
   profissional: { nome: "Profissional", cor: "#818cf8", ferramentas: "tudo do Essencial + Consulta CNPJ, Gerador de Documentos e Calculadora de Honorários" },
-  especialista: { nome: "Especialista", cor: "#DF9F20", ferramentas: "acesso completo a todas as 9 ferramentas do hub" },
+  especialista: { nome: "Especialista", cor: "#DF9F20", ferramentas: "acesso completo a todas as 10 ferramentas do hub" },
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

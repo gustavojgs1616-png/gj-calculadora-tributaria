@@ -496,7 +496,12 @@ export default function AssinaturaPage() {
             color: "var(--muted)",
           }}>
             <span>🛡️</span>
-            <span>60 dias de garantia em todos os planos · Cancele quando quiser · Suporte por e-mail</span>
+            <span>
+              7 dias de garantia em todos os planos · Cancele quando quiser ·{" "}
+              <a href="mailto:contato@gjsolucoescontabeis.com.br" style={{ color: "var(--primary)", textDecoration: "none" }}>
+                contato@gjsolucoescontabeis.com.br
+              </a>
+            </span>
           </div>
 
         </div>

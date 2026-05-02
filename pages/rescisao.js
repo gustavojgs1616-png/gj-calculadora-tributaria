@@ -4,12 +4,14 @@ import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import Layout from "../components/Layout";
 import { useAssinatura } from "../lib/AssinaturaContext";
+import CardBloqueado from "../components/CardBloqueado";
 import {
   TIPOS_RESCISAO,
   INSALUBRIDADE,
   calcularRescisao,
   calcTempoServico,
   calcDiasAvisoPrevio,
+  calcSeguroDesemprego,
   fmt,
   SALARIO_MINIMO_2026,
 } from "../lib/calculos_rescisao";
@@ -74,6 +76,296 @@ function useCurrencyInput(initial = "") {
   };
 
   return [display, setDisplay, numeric, handleChange];
+}
+
+// ── Checklist de Homologação ─────────────────────────────────────────────────
+const CHECKLIST_DOCS = {
+  sem_justa_causa: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#818cf8",
+      itens: [
+        "Termo de Rescisão do Contrato de Trabalho (TRCT) — assinado pelo empregador",
+        "Aviso Prévio (trabalhado ou indenizado) — comunicado por escrito",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Comunicado de Dispensa sem Justa Causa",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias",
+        "Termo de Quitação de Obrigações Trabalhistas (se aplicável)",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF) — código 01",
+        "Extrato analítico do FGTS (últimos depósitos)",
+        "Chave de Autorização para Saque — emitida pelo empregador via Conectividade Social",
+        "Comprovante de depósito da multa rescisória (40% sobre saldo FGTS)",
+      ],
+    },
+    {
+      grupo: "💼 Seguro-Desemprego",
+      cor: "#f97316",
+      itens: [
+        "Requerimento do Seguro-Desemprego (formulário SD/CD)",
+        "Comprovante de vínculos anteriores (se 2ª ou 3ª solicitação)",
+        "RG e CPF do empregado",
+        "Comprovante de residência",
+        "Número do NIS/PIS/PASEP",
+      ],
+    },
+  ],
+  pedido_demissao: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#3b82f6",
+      itens: [
+        "Pedido de demissão por escrito — assinado pelo empregado",
+        "Termo de Rescisão do Contrato de Trabalho (TRCT)",
+        "Aviso Prévio (trabalhado pelo empregado ou indenizado ao empregador)",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias",
+        "Termo de Quitação de Obrigações Trabalhistas (se aplicável)",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF) — código 01",
+        "Extrato analítico do FGTS (últimos depósitos)",
+        "⚠️ Saque do FGTS bloqueado — empregado não tem direito ao saque nesta modalidade",
+      ],
+    },
+  ],
+  justa_causa: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#dc2626",
+      itens: [
+        "Termo de Rescisão do Contrato de Trabalho (TRCT)",
+        "Comunicado de Dispensa por Justa Causa — com indicação do artigo 482 CLT",
+        "Inquérito disciplinar ou relatório de ocorrências (documentação da falta grave)",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias (saldo de salário e férias vencidas)",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF)",
+        "⚠️ Sem multa rescisória e saque bloqueado na dispensa por justa causa",
+      ],
+    },
+  ],
+  por_acordo: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#f59e0b",
+      itens: [
+        "Termo de Rescisão por Acordo Mútuo (art. 484-A CLT) — assinado por ambas as partes",
+        "Termo de Rescisão do Contrato de Trabalho (TRCT)",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias",
+        "Termo de Quitação de Obrigações Trabalhistas",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF)",
+        "Extrato analítico do FGTS",
+        "Chave de Autorização para Saque Parcial (até 80% do saldo)",
+        "Comprovante da multa rescisória (20% sobre saldo FGTS)",
+      ],
+    },
+  ],
+  rescisao_indireta: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#8b5cf6",
+      itens: [
+        "Notificação escrita do empregado ao empregador — com indicação da falta grave (art. 483 CLT)",
+        "Decisão judicial reconhecendo a rescisão indireta (se houver)",
+        "Termo de Rescisão do Contrato de Trabalho (TRCT)",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF)",
+        "Extrato analítico do FGTS",
+        "Chave de Autorização para Saque (100% do saldo)",
+        "Comprovante da multa rescisória (40% sobre saldo FGTS)",
+      ],
+    },
+    {
+      grupo: "💼 Seguro-Desemprego",
+      cor: "#f97316",
+      itens: [
+        "Requerimento do Seguro-Desemprego (formulário SD/CD)",
+        "RG e CPF do empregado",
+        "Comprovante de residência",
+        "Número do NIS/PIS/PASEP",
+      ],
+    },
+  ],
+  aposentadoria: [
+    {
+      grupo: "📄 Documentos Trabalhistas",
+      cor: "#22c55e",
+      itens: [
+        "Carta de Concessão de Aposentadoria (INSS)",
+        "Comunicado de desligamento por aposentadoria",
+        "Termo de Rescisão do Contrato de Trabalho (TRCT)",
+        "Carteira de Trabalho e Previdência Social (CTPS) — baixa anotada",
+        "Exame Médico Demissional (ASO)",
+        "Comprovante de pagamento das verbas rescisórias",
+      ],
+    },
+    {
+      grupo: "🏦 FGTS",
+      cor: "#22c55e",
+      itens: [
+        "Guia de Recolhimento Rescisório do FGTS (GRRF)",
+        "Extrato analítico do FGTS",
+        "Chave de Autorização para Saque do FGTS (aposentadoria é causa de saque)",
+      ],
+    },
+  ],
+};
+
+function ChecklistHomologacao() {
+  const [tipoSel, setTipoSel] = useState("sem_justa_causa");
+  const [marcados, setMarcados] = useState({});
+
+  const tipo = TIPOS_RESCISAO[tipoSel];
+  const grupos = CHECKLIST_DOCS[tipoSel] || [];
+
+  const toggleItem = (key) => setMarcados(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const totalItens = grupos.reduce((acc, g) => acc + g.itens.length, 0);
+  const totalMarcados = Object.values(marcados).filter(Boolean).length;
+  const pct = totalItens > 0 ? Math.round((totalMarcados / totalItens) * 100) : 0;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Seletor de tipo */}
+      <div className="card">
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
+          Selecione o tipo de rescisão
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {Object.entries(TIPOS_RESCISAO).map(([id, t]) => (
+            <button
+              key={id}
+              onClick={() => { setTipoSel(id); setMarcados({}); }}
+              style={{
+                padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", border: "2px solid",
+                borderColor: tipoSel === id ? t.cor : "var(--border)",
+                background: tipoSel === id ? `${t.cor}15` : "var(--bg-input)",
+                color: tipoSel === id ? t.cor : "var(--muted)",
+              }}
+            >{t.icone} {t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Barra de progresso */}
+      <div className="card" style={{ padding: "14px 18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+            {tipo.icone} {tipo.label}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: pct === 100 ? "#22c55e" : "var(--primary)" }}>
+            {totalMarcados}/{totalItens} · {pct}%
+          </div>
+        </div>
+        <div style={{ height: 6, background: "var(--border)", borderRadius: 99, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", borderRadius: 99, transition: "width 0.3s",
+            width: `${pct}%`,
+            background: pct === 100 ? "#22c55e" : "var(--primary)",
+          }} />
+        </div>
+        {pct === 100 && (
+          <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 700, marginTop: 8 }}>
+            ✅ Documentação completa!
+          </div>
+        )}
+      </div>
+
+      {/* Grupos de documentos */}
+      {grupos.map((grupo) => (
+        <div key={grupo.grupo} className="card" style={{ borderLeft: `3px solid ${grupo.cor}` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: grupo.cor, marginBottom: 14 }}>
+            {grupo.grupo}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {grupo.itens.map((item, i) => {
+              const key = `${grupo.grupo}-${i}`;
+              const checked = !!marcados[key];
+              const isAviso = item.startsWith("⚠️");
+              return (
+                <div
+                  key={key}
+                  onClick={() => !isAviso && toggleItem(key)}
+                  style={{
+                    display: "flex", alignItems: "flex-start", gap: 10,
+                    cursor: isAviso ? "default" : "pointer",
+                    padding: "8px 10px", borderRadius: 8,
+                    background: isAviso ? "#fef3c715" : checked ? "#22c55e10" : "transparent",
+                    border: `1px solid ${isAviso ? "#fde68a30" : checked ? "#22c55e30" : "transparent"}`,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {!isAviso && (
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                      border: `2px solid ${checked ? "#22c55e" : "var(--border)"}`,
+                      background: checked ? "#22c55e" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 11, color: "#fff", fontWeight: 800,
+                    }}>
+                      {checked && "✓"}
+                    </div>
+                  )}
+                  <span style={{
+                    fontSize: 13, lineHeight: 1.5,
+                    color: isAviso ? "#f59e0b" : checked ? "var(--muted)" : "var(--text)",
+                    textDecoration: checked ? "line-through" : "none",
+                    fontWeight: isAviso ? 600 : 400,
+                  }}>
+                    {item}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Rodapé legal */}
+      <div style={{
+        fontSize: 11, color: "var(--muted)", padding: "10px 14px",
+        background: "var(--bg-input)", borderRadius: 8, lineHeight: 1.6,
+      }}>
+        ⚖️ Checklist baseado na CLT, Portaria MTE nº 3.839/2023 e Resolução CODEFAT nº 995/2024. Verifique a legislação vigente em seu estado e a convenção coletiva aplicável.
+      </div>
+    </div>
+  );
 }
 
 // ── Componente de Campo ──────────────────────────────────────────────────────
@@ -395,6 +687,142 @@ function gerarPDFRescisao(resultado, form) {
   }
 }
 
+// ── PDF Seguro-Desemprego ────────────────────────────────────────────────────
+function gerarPDFSeguroDesemprego(r) {
+  const solLabel = r.solicitacao === 1 ? "1ª solicitação" : r.solicitacao === 2 ? "2ª solicitação" : "3ª solicitação ou mais";
+  const hoje = new Date().toLocaleDateString("pt-BR");
+  const horaMin = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>Seguro-Desemprego</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #fff; color: #111827; }
+  .page { max-width: 720px; margin: 0 auto; padding: 40px 44px; }
+  h1 { font-size: 20px; font-weight: 800; color: #111827; }
+  h2 { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .header { border-bottom: 3px solid #818cf8; padding-bottom: 18px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .badge { background: #818cf815; border: 1px solid #818cf840; border-radius: 6px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: #5a67d8; }
+  .section { margin-bottom: 24px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+  .metric label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 6px; }
+  .metric .val { font-size: 22px; font-weight: 800; }
+  .metric .val.verde { color: #16a34a; }
+  .metric .val.ouro  { color: #B27F1A; }
+  .metric .val.azul  { color: #5a67d8; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  thead tr { background: #f3f4f6; }
+  thead th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  tbody td { padding: 8px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+  tbody tr:last-child td { border-bottom: 2px solid #e5e7eb; font-weight: 700; }
+  .aviso { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; }
+  .aviso p { font-size: 11px; color: #78350f; line-height: 1.7; }
+  .req { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; }
+  .req ul { list-style: none; }
+  .req ul li { font-size: 11px; color: #374151; padding: 3px 0; padding-left: 16px; position: relative; line-height: 1.6; }
+  .req ul li::before { content: "✓"; position: absolute; left: 0; color: #16a34a; font-weight: 700; }
+  .footer { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 36px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div>
+      <h1>💼 Seguro-Desemprego</h1>
+      <p style="font-size:12px;color:#6b7280;margin-top:4px;">Gerado em ${hoje} às ${horaMin}</p>
+    </div>
+    <div>
+      <div class="badge">💼 ${solLabel}</div>
+      <div style="font-size:10px;color:#9ca3af;text-align:right;margin-top:6px;">GJ Hub Contábil</div>
+    </div>
+  </div>
+
+  <!-- Métricas -->
+  <div class="metrics">
+    <div class="metric">
+      <label>Nº de Parcelas</label>
+      <div class="val azul">${r.parcelas}×</div>
+    </div>
+    <div class="metric">
+      <label>Valor por Parcela</label>
+      <div class="val verde">${fmt(r.valorParcela)}</div>
+    </div>
+    <div class="metric">
+      <label>Total a Receber</label>
+      <div class="val ouro">${fmt(r.totalReceber)}</div>
+    </div>
+  </div>
+
+  <!-- Composição dos salários -->
+  <div class="section">
+    <h2>Composição da Média Salarial</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Competência</th>
+          <th style="text-align:right">Remuneração Bruta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Mês -1 (mais recente)</td><td style="text-align:right;font-weight:600">${fmt(r.s1)}</td></tr>
+        <tr><td>Mês -2</td><td style="text-align:right;font-weight:600">${fmt(r.s2)}</td></tr>
+        <tr><td>Mês -3</td><td style="text-align:right;font-weight:600">${fmt(r.s3)}</td></tr>
+        <tr><td><strong>Média (base de cálculo)</strong></td><td style="text-align:right;font-weight:800;font-size:14px;color:#5a67d8">${fmt(r.salarioMedio)}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Dados da solicitação -->
+  <div class="section">
+    <h2>Dados da Solicitação</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;">
+      <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Meses Trabalhados</label><span style="font-size:13px;font-weight:700;">${r.mesesTrabalhados} meses</span></div>
+      <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Nº da Solicitação</label><span style="font-size:13px;font-weight:700;">${solLabel}</span></div>
+      <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Parcelas Concedidas</label><span style="font-size:13px;font-weight:700;">${r.parcelas} parcelas</span></div>
+    </div>
+  </div>
+
+  <!-- Prazo -->
+  <div class="aviso">
+    <p><strong>⏰ Prazo para Solicitar:</strong> A partir do 7º dia após a dispensa até o 120º dia.</p>
+    <p>Solicite pelo aplicativo <strong>Carteira de Trabalho Digital</strong> (gov.br) ou compareça ao SINE mais próximo.</p>
+    <p style="margin-top:6px;color:#92400e;"><strong>Base legal:</strong> Lei nº 7.998/1990 · Resolução CODEFAT nº 995/2024</p>
+  </div>
+
+  <!-- Requisitos -->
+  <div class="req">
+    <h2 style="color:#15803d;margin-bottom:10px;">Requisitos para receber o benefício</h2>
+    <ul>
+      <li>Ter sido dispensado sem justa causa (inclusive rescisão indireta)</li>
+      <li>Ter trabalhado pelo menos 6 meses nos últimos 36 meses</li>
+      <li>Não possuir renda própria suficiente para seu sustento e de sua família</li>
+      <li>Não estar recebendo benefício previdenciário de prestação continuada (exceto pensão por morte e auxílio-acidente)</li>
+      <li>Estar desempregado no momento da solicitação</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    Documento gerado pelo GJ Hub Contábil em ${hoje} — Caráter informativo. Sujeito a validação pelo MTE.
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (win) {
+    win.onload = () => { setTimeout(() => { win.print(); URL.revokeObjectURL(url); }, 300); };
+  }
+}
+
 // ── Histórico ────────────────────────────────────────────────────────────────
 const HISTORICO_KEY = "gj-rescisao-historico";
 
@@ -530,6 +958,14 @@ export default function RescisaoPage() {
   const [insalubridadeGrau, setInsalubridadeGrau] = useState("");
   const [periculosidade, setPericulosidade] = useState(false);
 
+  // Seguro-Desemprego
+  const [sdSol1Display, , sdSal1, sdSal1Handle] = useCurrencyInput("");
+  const [sdSol2Display, , sdSal2, sdSal2Handle] = useCurrencyInput("");
+  const [sdSol3Display, , sdSal3, sdSal3Handle] = useCurrencyInput("");
+  const [sdMeses, setSdMeses] = useState("");
+  const [sdSolicitacao, setSdSolicitacao] = useState("1");
+  const [resultadoSD, setResultadoSD] = useState(null);
+
   // Resultado
   const [resultado, setResultado] = useState(null);
   const [formDataSalvo, setFormDataSalvo] = useState(null);
@@ -554,17 +990,18 @@ export default function RescisaoPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  // Redireciona se não tem acesso
-  useEffect(() => {
-    if (pode && !pode("rescisao")) router.replace("/assinatura");
-  }, [pode, router]);
-
   // Carrega histórico do localStorage
   useEffect(() => {
     setHistorico(carregarHistorico());
   }, []);
 
   if (!user) return null;
+
+  if (!pode("rescisao")) return (
+    <Layout user={user}>
+      <CardBloqueado ferramenta="rescisao" planoNecessario="profissional" />
+    </Layout>
+  );
 
   // ── Salvar no histórico ──
   const salvarHistorico = (res, form) => {
@@ -726,7 +1163,9 @@ export default function RescisaoPage() {
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 22, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
             {[
-              { id: "calcular", label: "Novo Cálculo" },
+              { id: "calcular",  label: "Novo Cálculo" },
+              { id: "seguro",    label: "💼 Seguro-Desemprego" },
+              { id: "checklist", label: "📋 Checklist" },
               { id: "historico", label: `Histórico${historico.length > 0 ? ` (${historico.length})` : ""}` },
             ].map(t => (
               <button
@@ -744,6 +1183,225 @@ export default function RescisaoPage() {
               >{t.label}</button>
             ))}
           </div>
+
+          {/* ── ABA SEGURO-DESEMPREGO ── */}
+          {aba === "seguro" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Formulário */}
+              <div className="card">
+                <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: "var(--text)" }}>
+                  Calculadora de Seguro-Desemprego
+                </h2>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
+                  Resolução CODEFAT nº 995/2024 · Válido para dispensa sem justa causa e rescisão indireta
+                </p>
+
+                {/* Salários */}
+                <div style={{ marginBottom: 20 }}>
+                  <div className="label" style={{ marginBottom: 10 }}>Remuneração bruta dos últimos 3 meses</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                    {[
+                      { label: "Mês -1 (mais recente)", val: sdSol1Display, fn: sdSal1Handle },
+                      { label: "Mês -2",                val: sdSol2Display, fn: sdSal2Handle },
+                      { label: "Mês -3",                val: sdSol3Display, fn: sdSal3Handle },
+                    ].map(({ label, val, fn }) => (
+                      <Campo key={label} label={label}>
+                        <input
+                          value={val}
+                          onChange={fn}
+                          placeholder="0,00"
+                          inputMode="numeric"
+                        />
+                      </Campo>
+                    ))}
+                  </div>
+                  {sdSal1 > 0 && sdSal2 > 0 && sdSal3 > 0 && (
+                    <div style={{
+                      marginTop: 10, padding: "10px 14px", borderRadius: 8,
+                      background: "var(--bg-input)", border: "1px solid var(--border)",
+                      fontSize: 13, color: "var(--muted)",
+                    }}>
+                      Média dos 3 meses:{" "}
+                      <strong style={{ color: "var(--text)" }}>
+                        {fmt((sdSal1 + sdSal2 + sdSal3) / 3)}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Meses trabalhados + Solicitação */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginBottom: 24 }}>
+                  <Campo label="Meses trabalhados nos últimos 36 meses *" help="Considere todos os vínculos formais nos últimos 3 anos">
+                    <input
+                      type="number"
+                      min={0} max={36}
+                      value={sdMeses}
+                      onChange={e => setSdMeses(e.target.value)}
+                      placeholder="Ex: 18"
+                      inputMode="numeric"
+                    />
+                  </Campo>
+                  <Campo label="Nº da solicitação *">
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {[
+                        { id: "1", label: "1ª" },
+                        { id: "2", label: "2ª" },
+                        { id: "3", label: "3ª ou +" },
+                      ].map(op => (
+                        <button
+                          key={op.id}
+                          onClick={() => setSdSolicitacao(op.id)}
+                          style={{
+                            flex: 1, padding: "9px 4px", borderRadius: 8, fontSize: 13,
+                            fontWeight: 700, cursor: "pointer", border: "2px solid",
+                            borderColor: sdSolicitacao === op.id ? "var(--primary)" : "var(--border)",
+                            background: sdSolicitacao === op.id ? "var(--primary-glow)" : "var(--bg-input)",
+                            color: sdSolicitacao === op.id ? "var(--primary)" : "var(--muted)",
+                          }}
+                        >{op.label}</button>
+                      ))}
+                    </div>
+                  </Campo>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const res = calcSeguroDesemprego({
+                      salario1: sdSal1, salario2: sdSal2, salario3: sdSal3,
+                      mesesTrabalhados: sdMeses, solicitacao: sdSolicitacao,
+                    });
+                    setResultadoSD(res);
+                  }}
+                  style={{
+                    width: "100%", padding: "13px", borderRadius: 10, fontSize: 15,
+                    fontWeight: 800, cursor: "pointer", border: "none",
+                    background: "var(--primary)", color: "#fff",
+                  }}
+                >
+                  Calcular Seguro-Desemprego →
+                </button>
+              </div>
+
+              {/* Resultado */}
+              {resultadoSD && !resultadoSD.elegivel && (
+                <div className="card" style={{ borderLeft: "4px solid var(--red)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 24 }}>⚠️</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--red)", marginBottom: 2 }}>Não elegível</div>
+                      <div style={{ fontSize: 13, color: "var(--muted)" }}>{resultadoSD.motivo}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {resultadoSD?.elegivel && (
+                <>
+                  {/* Card principal — resultado */}
+                  <div className="card" style={{ borderLeft: "4px solid #22c55e" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                      <span style={{ fontSize: 28 }}>✅</span>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>Elegível ao Seguro-Desemprego</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)" }}>{resultadoSD.solicitacao}ª solicitação · {resultadoSD.mesesTrabalhados} meses trabalhados</div>
+                      </div>
+                    </div>
+
+                    {/* Números principais */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
+                      {[
+                        { label: "Nº de Parcelas",       valor: `${resultadoSD.parcelas}×`,         cor: "var(--primary)", grande: true },
+                        { label: "Valor por Parcela",     valor: fmt(resultadoSD.valorParcela),       cor: "#22c55e",        grande: true },
+                        { label: "Total a Receber",       valor: fmt(resultadoSD.totalReceber),       cor: "#DF9F20",        grande: true },
+                        { label: "Salário Médio (base)",  valor: fmt(resultadoSD.salarioMedio),       cor: "var(--muted)",   grande: false },
+                      ].map(({ label, valor, cor, grande }) => (
+                        <div key={label} style={{
+                          background: "var(--bg-input)", border: "1px solid var(--border)",
+                          borderRadius: 10, padding: "14px 16px",
+                        }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+                            {label}
+                          </div>
+                          <div style={{ fontSize: grande ? 22 : 16, fontWeight: 800, color: cor }}>{valor}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Composição dos salários */}
+                    <div style={{ background: "var(--bg-input)", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+                        Composição da Média
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {[
+                          { label: "Mês -1", val: resultadoSD.s1 },
+                          { label: "Mês -2", val: resultadoSD.s2 },
+                          { label: "Mês -3", val: resultadoSD.s3 },
+                        ].map(({ label, val }) => (
+                          <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                            <span style={{ color: "var(--muted)" }}>{label}</span>
+                            <span style={{ fontWeight: 700, color: "var(--text)" }}>{fmt(val)}</span>
+                          </div>
+                        ))}
+                        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 6, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                          <span style={{ color: "var(--muted)" }}>Média</span>
+                          <span style={{ fontWeight: 800, color: "var(--primary)" }}>{fmt(resultadoSD.salarioMedio)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Aviso de prazo */}
+                    <div style={{
+                      background: "#DF9F2012", border: "1px solid #DF9F2030",
+                      borderRadius: 10, padding: "12px 14px", marginBottom: 16,
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#DF9F20", marginBottom: 4 }}>⏰ Prazo para Solicitar</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+                        A partir do <strong style={{ color: "var(--text)" }}>7º dia</strong> após a dispensa até o <strong style={{ color: "var(--text)" }}>120º dia</strong>.<br />
+                        Solicite pelo aplicativo <strong style={{ color: "var(--text)" }}>Carteira de Trabalho Digital</strong> ou no SINE.
+                      </div>
+                    </div>
+
+                    {/* Botão PDF */}
+                    <button
+                      onClick={() => gerarPDFSeguroDesemprego(resultadoSD)}
+                      style={{
+                        width: "100%", padding: "12px", borderRadius: 10, fontSize: 14,
+                        fontWeight: 800, cursor: "pointer", border: "none",
+                        background: "linear-gradient(135deg, #818cf8, #6366f1)",
+                        color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      }}
+                    >
+                      📄 Gerar PDF do Seguro-Desemprego
+                    </button>
+                  </div>
+
+                  {/* Requisitos */}
+                  <div className="card">
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>📋 Requisitos para receber o benefício</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {[
+                        "Ter sido dispensado sem justa causa (inclusive rescisão indireta)",
+                        `Ter trabalhado pelo menos 6 meses nos últimos 36 meses`,
+                        "Não possuir renda própria suficiente para seu sustento e de sua família",
+                        "Não estar recebendo benefício previdenciário de prestação continuada (exceto pensão por morte e auxílio-acidente)",
+                        "Estar desempregado no momento da solicitação",
+                      ].map((req, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: "var(--muted)" }}>
+                          <span style={{ color: "#22c55e", flexShrink: 0, marginTop: 1 }}>✓</span>
+                          <span>{req}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── ABA CHECKLIST ── */}
+          {aba === "checklist" && <ChecklistHomologacao />}
 
           {/* ── ABA HISTÓRICO ── */}
           {aba === "historico" && (
