@@ -185,6 +185,7 @@ const NAV_GRUPOS = [
       { id: "icmsst",     label: "ICMS Interestadual",  tipo: "pagina", href: "/icmsst",      icon: "calc" },
       { id: "reforma",    label: "Reforma Tributária",  tipo: "pagina", href: "/reforma",     icon: "reform", destaque: true },
       { id: "simulado",   label: "Simulado CFC",        tipo: "pagina", href: "/simulado",    icon: "award" },
+      { id: "irpf",       label: "Simulador IRPF",      tipo: "pagina", href: "/irpf",        icon: "calc", novo: true },
     ],
   },
 ];

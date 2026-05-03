@@ -66,6 +66,7 @@ const RECURSOS = [
   { id: "icmsst",     icon: "📊", label: "Calculadora ICMS-ST",            sub: "Substituição tributária" },
   { id: "reforma",    icon: "📈", label: "Simulador Reforma Tributária",    sub: "Impacto LC 214/2025 · IBS + CBS" },
   { id: "simulado",   icon: "🎓", label: "Simulado CFC",                   sub: "140 questões 2018–2025" },
+  { id: "irpf",       icon: "🧾", label: "Simulador IRPF",                 sub: "Simplificado vs. Completo · 2025", novo: true },
 ];
 
 function diasRestantes(dataExpiracao) {

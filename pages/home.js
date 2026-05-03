@@ -98,9 +98,16 @@ export default function HomePage() {
       label: "Reforma Tributária",
       desc: "Simule o impacto da LC 214/2025 para seus clientes. IBS + CBS, regimes comparados, cronograma de transição 2026–2033.",
       cor: "#DF9F20",
-      badge: "NOVO",
       destaque: true,
       rota: "/reforma",
+    },
+    {
+      id: "irpf",
+      label: "Simulador IRPF",
+      desc: "Simplificado vs. completo, restituição ou imposto a pagar, IRRF mensal e tabelas 2025 atualizadas.",
+      cor: "#DF9F20",
+      badge: "NOVO",
+      rota: "/irpf",
     },
   ];
 
