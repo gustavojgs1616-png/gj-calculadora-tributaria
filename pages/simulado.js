@@ -6,7 +6,7 @@ import Layout from "../components/Layout";
 import { useAssinatura } from "../lib/AssinaturaContext";
 import CardBloqueado from "../components/CardBloqueado";
 import {
-  AREAS, QUESTOES, DISTRIBUICAO_COMPLETO, DISTRIBUICAO_RAPIDO,
+  AREAS, QUESTOES, DISTRIBUICAO_COMPLETO, DISTRIBUICAO_RAPIDO, DISTRIBUICAO_2025,
   selecionarQuestoes, shuffle,
 } from "../lib/questoes_cfc";
 
@@ -132,7 +132,7 @@ function TelaHistorico({ userId, onIniciar }) {
                       {h.tempo_segundos > 0 && ` · ${fmtTempo(h.tempo_segundos)}`}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, textTransform: "capitalize" }}>
-                      Modo: {h.modo === "completo" ? "Simulado Completo" : h.modo === "rapido" ? "Prova Rápida" : h.modo === "estudo" ? "Modo Estudo" : "Por Área"}
+                      Modo: {h.modo === "completo" ? "Simulado Completo" : h.modo === "rapido" ? "Prova Rápida" : h.modo === "estudo" ? "Modo Estudo" : h.modo === "foco2025" ? "🆕 Foco 2025" : "Por Área"}
                     </div>
                   </div>
                   <div style={{ textAlign: "center" }}>
@@ -168,6 +168,11 @@ function TelaConfig({ onIniciar, userId }) {
     let questoes;
     if (modo === "completo") questoes = selecionarQuestoes(DISTRIBUICAO_COMPLETO);
     else if (modo === "rapido") questoes = selecionarQuestoes(DISTRIBUICAO_RAPIDO);
+    else if (modo === "foco2025") {
+      const q2025 = QUESTOES.filter((q) => q.edicao && q.edicao.startsWith("2025"));
+      questoes = shuffle(q2025).slice(0, Math.min(42, q2025.length));
+      if (questoes.length < 10) questoes = selecionarQuestoes(DISTRIBUICAO_2025);
+    }
     else {
       const disponiveis = shuffle(QUESTOES.filter((q) => areasEscolhidas.includes(q.area)));
       questoes = disponiveis.slice(0, Math.min(50, disponiveis.length));
@@ -180,7 +185,7 @@ function TelaConfig({ onIniciar, userId }) {
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", margin: 0 }}>Simulado CFC</h1>
         <p style={{ color: "var(--muted)", marginTop: 4, fontSize: 13 }}>
-          {QUESTOES.length} questões · Exame de Suficiência 2018–2025
+          Exame de Suficiência 2018–2025
         </p>
       </div>
 
@@ -208,9 +213,10 @@ function TelaConfig({ onIniciar, userId }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { id: "completo", titulo: "Simulado Completo", desc: "50 questões · Distribuição oficial do CFC · ~4 horas" },
-                { id: "rapido",   titulo: "Prova Rápida",      desc: "25 questões · Mix de todas as áreas · ~2 horas" },
-                { id: "areas",    titulo: "Por Área",          desc: "Escolha as áreas que deseja praticar" },
+                { id: "completo",  titulo: "Simulado Completo",  desc: "50 questões · Distribuição oficial do CFC · ~4 horas" },
+                { id: "rapido",    titulo: "Prova Rápida",        desc: "25 questões · Mix de todas as áreas · ~2 horas" },
+                { id: "foco2025",  titulo: "🆕 Foco 2025",        desc: `${QUESTOES.filter(q => q.edicao?.startsWith("2025")).length} questões das provas 2025/1 e 2025/2 · Conteúdo mais recente` },
+                { id: "areas",     titulo: "Por Área",            desc: "Escolha as áreas que deseja praticar" },
               ].map(({ id, titulo, desc }) => (
                 <div key={id} onClick={() => setModo(id)} style={{
                   display: "flex", alignItems: "center", gap: 14, padding: "12px 16px",
@@ -262,7 +268,7 @@ function TelaConfig({ onIniciar, userId }) {
               Opções
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {/* Modo estudo */}
+              {/* Correção Imediata */}
               <div onClick={() => setModoEstudo(!modoEstudo)} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "12px 16px", borderRadius: 10, cursor: "pointer",
@@ -270,8 +276,8 @@ function TelaConfig({ onIniciar, userId }) {
                 border: `1px solid ${modoEstudo ? "var(--primary)" : "var(--border)"}`,
               }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: modoEstudo ? "var(--primary)" : "var(--text)" }}>Modo Estudo</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Ver resposta correta logo após responder cada questão</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: modoEstudo ? "var(--primary)" : "var(--text)" }}>📋 Correção Imediata</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Exibir a resolução completa logo após responder cada questão</div>
                 </div>
                 <div style={{
                   width: 40, height: 22, borderRadius: 11,
@@ -488,14 +494,61 @@ function TelaExame({ questoes, timerMinutos, modoEstudo, onFinalizar }) {
           })}
         </div>
 
-        {/* Explicação modo estudo */}
+        {/* Correção Imediata — resolução completa */}
         {modoEstudo && showExplicacao && respostaAtual && (
-          <div style={{ marginTop: 16, padding: "14px 16px", background: "#808CFF0C", border: "1px solid #808CFF22", borderRadius: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: acertouAtual ? "#22c55e" : "#ef4444", marginBottom: 6 }}>
-              {acertouAtual ? "Correto!" : `Resposta correta: ${questao.resposta}`}
+          <div style={{
+            marginTop: 20,
+            border: `2px solid ${acertouAtual ? "#22c55e" : "#ef4444"}`,
+            borderRadius: 14,
+            overflow: "hidden",
+          }}>
+            {/* Cabeçalho */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 18px",
+              background: acertouAtual ? "#22c55e18" : "#ef444418",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>{acertouAtual ? "✅" : "❌"}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: acertouAtual ? "#22c55e" : "#ef4444" }}>
+                    {acertouAtual ? "Resposta correta!" : "Resposta incorreta"}
+                  </div>
+                  {!acertouAtual && (
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>
+                      A resposta certa era a alternativa <strong style={{ color: "#22c55e" }}>{questao.resposta}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.7 }}>
-              {questao.explicacao}
+            {/* Resolução */}
+            <div style={{ padding: "14px 18px", background: "var(--bg-card)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+                Resolução
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.8 }}>
+                {questao.explicacao || "Resolução não disponível para esta questão."}
+              </div>
+              {/* Botão próxima dentro da resolução */}
+              {idx < questoes.length - 1 && (
+                <button onClick={() => setIdx((i) => i + 1)} style={{
+                  marginTop: 16, padding: "9px 22px", borderRadius: 8, fontSize: 13, fontWeight: 700,
+                  background: "linear-gradient(135deg,#DF9F20,#B27F1A)", border: "none", color: "#000",
+                  cursor: "pointer", display: "block", width: "100%",
+                }}>
+                  Próxima questão →
+                </button>
+              )}
+              {idx === questoes.length - 1 && (
+                <button onClick={() => onFinalizar(respostas, questoes)} style={{
+                  marginTop: 16, padding: "9px 22px", borderRadius: 8, fontSize: 13, fontWeight: 700,
+                  background: "linear-gradient(135deg,#DF9F20,#B27F1A)", border: "none", color: "#000",
+                  cursor: "pointer", display: "block", width: "100%",
+                }}>
+                  Ver resultado →
+                </button>
+              )}
             </div>
           </div>
         )}
