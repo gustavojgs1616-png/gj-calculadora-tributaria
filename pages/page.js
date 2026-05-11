@@ -525,7 +525,7 @@ function DemoSection() {
 
 export default function LandingPage() {
   const router = useRouter();
-  const [periodo, setPeriodo] = useState("anual");
+  const [periodo, setPeriodo] = useState("mensal");
 
   return (
     <>
