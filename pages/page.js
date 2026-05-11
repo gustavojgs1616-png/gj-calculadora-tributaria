@@ -692,18 +692,26 @@ export default function LandingPage() {
       {/* ══════════════════════════════════
           STATS
       ══════════════════════════════════ */}
-      <section style={{ borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", background: "#eaf5fd", padding: "22px 0" }}>
-        <div className="lp" style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 36 }}>
+      <section style={{ borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", background: "#eaf5fd", padding: "28px 0" }}>
+        <div className="lp" style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: 0 }}>
           {[
-            { n: "12", label: "ferramentas" },
-            { n: "2026", label: "tabelas atualizadas" },
-            { n: "PDF", label: "em tudo" },
-            { n: "30s", label: "por simulação" },
-            { n: "7d", label: "de garantia" },
-          ].map((s) => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#DF9F20" }}>{s.n}</div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.label}</div>
+            { n: "100+", label: "contadores ativos", icon: "👨‍💼" },
+            { n: "12", label: "ferramentas no hub", icon: "🛠️" },
+            { n: "30s", label: "por simulação", icon: "⚡" },
+            { n: "7d", label: "garantia total", icon: "🛡️" },
+            { n: "2026", label: "tabelas atualizadas", icon: "📅" },
+          ].map((s, i, arr) => (
+            <div key={s.label} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ textAlign: "center", padding: "0 32px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontSize: 16 }}>{s.icon}</span>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: "#DF9F20", lineHeight: 1 }}>{s.n}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</div>
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{ width: 1, height: 36, background: "#cbd5e1", flexShrink: 0 }} />
+              )}
             </div>
           ))}
         </div>
