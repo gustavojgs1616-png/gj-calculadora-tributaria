@@ -564,6 +564,13 @@ export default function LandingPage() {
         `}} />
         <noscript dangerouslySetInnerHTML={{ __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=157519487288919&ev=PageView&noscript=1"/>` }} />
 
+        {/* ── Fontes: Satoshi (títulos) + Inter (texto/botões) ── */}
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
         {/* ── UTMify ── */}
         <script src="https://cdn.utmify.com.br/scripts/utms/latest.js" data-utmify-prevent-xcod-sck="" data-utmify-prevent-subids="" async defer />
 
@@ -582,35 +589,75 @@ export default function LandingPage() {
       <style jsx global>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { font-family: 'Saira', 'Inter', sans-serif; background: #f0f8ff; color: #0d1545; }
+
+        /* ── Tipografia base ── */
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          font-weight: 400;
+          background: #f0f8ff;
+          color: #0d1545;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── Títulos: Satoshi Bold ── */
+        h1, h2, h3, h4, h5, h6 {
+          font-family: 'Satoshi', 'Inter', sans-serif;
+          font-weight: 700;
+          line-height: 1.2;
+        }
+
         a { text-decoration: none; color: inherit; }
-        button { cursor: pointer; border: none; font-family: inherit; }
+
+        /* ── Botões: Inter SemiBold ── */
+        button {
+          cursor: pointer;
+          border: none;
+          font-family: 'Inter', sans-serif;
+          font-weight: 600;
+        }
+
         .lp { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
 
+        /* ── CTA principal ── */
         .lp-btn-gold {
           background: linear-gradient(135deg, #DF9F20, #B27F1A);
-          color: #000; font-weight: 800; border-radius: 10px;
-          padding: 14px 32px; font-size: 15px; display: inline-block;
-          box-shadow: 0 4px 30px #DF9F2040; transition: transform 0.15s, box-shadow 0.15s;
+          color: #000;
+          font-family: 'Inter', sans-serif;
+          font-weight: 600;
+          border-radius: 10px;
+          padding: 14px 32px;
+          font-size: 15px;
+          display: inline-block;
+          box-shadow: 0 4px 30px #DF9F2040;
+          transition: transform 0.15s, box-shadow 0.15s;
         }
         .lp-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 40px #DF9F2060; }
 
         .lp-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
         .lp-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
 
+        /* ── Tablet ── */
         @media (max-width: 860px) {
           .lp-grid-3 { grid-template-columns: 1fr 1fr; }
           .lp-hero-h { font-size: 30px !important; }
           .lp-pricing-grid { grid-template-columns: 1fr !important; }
         }
+
+        /* ── Mobile ── */
         @media (max-width: 560px) {
+          body { font-size: 15px; }
+          h1, h2 { letter-spacing: -0.02em; }
+          .lp { padding: 0 16px; }
           .lp-grid-3 { grid-template-columns: 1fr; }
           .lp-grid-2 { grid-template-columns: 1fr; }
           .lp-hero-h { font-size: 26px !important; }
           .lp-steps { grid-template-columns: 1fr 1fr !important; }
+          .lp-btn-gold { width: 100%; text-align: center; padding: 14px 20px; font-size: 15px; }
         }
         @media (max-width: 400px) {
           .lp-steps { grid-template-columns: 1fr !important; }
+          .lp-hero-h { font-size: 23px !important; }
         }
       `}</style>
 
