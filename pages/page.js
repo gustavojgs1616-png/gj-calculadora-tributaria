@@ -1365,15 +1365,15 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="GJ Hub Contábil" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "contain" }} />
                 <span style={{ fontSize: 14, fontWeight: 800, color: "#F5F6FF" }}>GJ Hub Contábil</span>
               </div>
-              <div style={{ fontSize: 11, color: "#6670B840" }}>GJ Soluções Contábeis · CNPJ 57.521.893/0001-40</div>
+              <div style={{ fontSize: 11, color: "#ffffff80" }}>GJ Treinamentos Contábeis</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <Link href="/privacidade" style={{ fontSize: 12, color: "#6670B8" }}>Política de Privacidade</Link>
-              <Link href="/termos" style={{ fontSize: 12, color: "#6670B8" }}>Termos de Uso</Link>
-              <a href="mailto:contato@gjsolucoescontabeis.com.br" style={{ fontSize: 12, color: "#6670B8" }}>contato@gjsolucoescontabeis.com.br</a>
+              <Link href="/privacidade" style={{ fontSize: 12, color: "#ffffff99" }}>Política de Privacidade</Link>
+              <Link href="/termos" style={{ fontSize: 12, color: "#ffffff99" }}>Termos de Uso</Link>
+              <a href="mailto:contato@gjsolucoescontabeis.com.br" style={{ fontSize: 12, color: "#ffffff99" }}>contato@gjsolucoescontabeis.com.br</a>
             </div>
           </div>
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #E0E3FF08", textAlign: "center", fontSize: 11, color: "#6670B830" }}>
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #ffffff10", textAlign: "center", fontSize: 11, color: "#ffffff60" }}>
             © {new Date().getFullYear()} GJ Hub Contábil. Todos os direitos reservados.
           </div>
         </div>
