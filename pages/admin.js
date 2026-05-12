@@ -151,7 +151,8 @@ export default function AdminPage() {
   const [filtroBusca, setFiltroBusca]       = useState("");
   const [filtroPlano, setFiltroPlano]       = useState("todos");
   const [filtroStatus, setFiltroStatus]     = useState("todos");
-  const [filtroPeriodo, setFiltroPeriodo]   = useState("todos");
+  const [filtroPeriodo, setFiltroPeriodo]       = useState("todos");
+  const [filtroPagamento, setFiltroPagamento]   = useState("todos");
   const [filtroCadastro, setFiltroCadastro] = useState("todos");
   const [filtroAcesso, setFiltroAcesso]     = useState("todos");
   const [filtroExpira, setFiltroExpira]     = useState("todos");
@@ -255,7 +256,8 @@ export default function AdminPage() {
     }
     if (filtroPlano !== "todos" && u.plano !== filtroPlano) return false;
     if (filtroStatus !== "todos" && u.status !== filtroStatus) return false;
-    if (filtroPeriodo !== "todos" && u.periodicidade !== filtroPeriodo) return false;
+    if (filtroPeriodo   !== "todos" && u.periodicidade   !== filtroPeriodo)   return false;
+    if (filtroPagamento !== "todos" && u.meio_pagamento !== filtroPagamento) return false;
     if (filtroCadastro !== "todos") {
       const d = new Date(u.created_at);
       if (filtroCadastro === "hoje"   && d < inicioDia)    return false;
@@ -284,13 +286,13 @@ export default function AdminPage() {
 
   const limparFiltros = () => {
     setFiltroBusca(""); setFiltroPlano("todos"); setFiltroStatus("todos");
-    setFiltroPeriodo("todos"); setFiltroCadastro("todos");
-    setFiltroAcesso("todos"); setFiltroExpira("todos");
+    setFiltroPeriodo("todos"); setFiltroPagamento("todos");
+    setFiltroCadastro("todos"); setFiltroAcesso("todos"); setFiltroExpira("todos");
   };
 
   const temFiltroAtivo = filtroBusca || filtroPlano !== "todos" || filtroStatus !== "todos" ||
-    filtroPeriodo !== "todos" || filtroCadastro !== "todos" ||
-    filtroAcesso !== "todos" || filtroExpira !== "todos";
+    filtroPeriodo !== "todos" || filtroPagamento !== "todos" ||
+    filtroCadastro !== "todos" || filtroAcesso !== "todos" || filtroExpira !== "todos";
 
   if (!user) return null;
 
@@ -550,7 +552,7 @@ export default function AdminPage() {
                 <thead>
                   {/* Labels */}
                   <tr style={{ background: T.tableHeadBg }}>
-                    {["Nome / E-mail", "Plano", "Período", "Status", "Cadastro", "Último acesso", "Expira", "Ações"].map((h) => (
+                    {["Nome / E-mail", "Plano", "Período", "Pagamento", "Status", "Cadastro", "Último acesso", "Expira", "Ações"].map((h) => (
                       <th key={h} style={{
                         padding: "10px 14px 4px",
                         textAlign: "left",
@@ -591,6 +593,15 @@ export default function AdminPage() {
                         <option value="todos">Todos</option>
                         <option value="mensal">Mensal</option>
                         <option value="anual">Anual</option>
+                      </select>
+                    </th>
+                    {/* Pagamento */}
+                    <th style={{ padding: "4px 14px 10px" }}>
+                      <select value={filtroPagamento} onChange={(e) => setFiltroPagamento(e.target.value)} style={thSelectStyle}>
+                        <option value="todos">Todos</option>
+                        <option value="cartao">Cartão</option>
+                        <option value="pix">Pix</option>
+                        <option value="boleto">Boleto</option>
                       </select>
                     </th>
                     {/* Status */}
@@ -640,7 +651,7 @@ export default function AdminPage() {
                 <tbody>
                   {usuariosFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: "center", padding: 40, color: T.muted }}>
+                      <td colSpan={9} style={{ textAlign: "center", padding: 40, color: T.muted }}>
                         Nenhum usuário encontrado.
                       </td>
                     </tr>
@@ -692,6 +703,33 @@ export default function AdminPage() {
                               letterSpacing: "0.04em",
                             }}>
                               {u.periodicidade === "anual" ? "📅 Anual" : "🔄 Mensal"}
+                            </span>
+                          ) : (
+                            <span style={{ color: T.muted, fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+
+                        {/* Pagamento */}
+                        <td style={{ padding: "12px 14px" }}>
+                          {u.meio_pagamento ? (
+                            <span style={{
+                              background: u.meio_pagamento === "pix"
+                                ? "#22c55e15"
+                                : u.meio_pagamento === "cartao"
+                                ? "#6366f115"
+                                : "#f9731615",
+                              color: u.meio_pagamento === "pix"
+                                ? "#16a34a"
+                                : u.meio_pagamento === "cartao"
+                                ? "#4f46e5"
+                                : "#ea580c",
+                              border: `1px solid ${u.meio_pagamento === "pix" ? "#22c55e30" : u.meio_pagamento === "cartao" ? "#6366f130" : "#f9731630"}`,
+                              borderRadius: 6,
+                              padding: "3px 10px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}>
+                              {u.meio_pagamento === "pix" ? "◼ Pix" : u.meio_pagamento === "cartao" ? "💳 Cartão" : `${u.meio_pagamento}`}
                             </span>
                           ) : (
                             <span style={{ color: T.muted, fontSize: 12 }}>—</span>

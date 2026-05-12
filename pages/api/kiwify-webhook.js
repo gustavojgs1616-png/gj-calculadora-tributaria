@@ -332,6 +332,23 @@ export default async function handler(req, res) {
   const { plano, meses } = detectarPlanoMeses(ev);
   console.log(`[webhook] plano="${plano}" | meses=${meses}`);
 
+  // ── Detecta meio de pagamento ────────────────────────────────────────────────
+  const metodoBruto = (
+    ev?.Payment?.method        ||
+    ev?.payment?.method        ||
+    ev?.payment_method         ||
+    ev?.order_payment_method   ||
+    ""
+  ).toLowerCase();
+
+  let meioPagamento = null;
+  if (metodoBruto.includes("pix"))                                       meioPagamento = "pix";
+  else if (metodoBruto.includes("credit") || metodoBruto.includes("card")) meioPagamento = "cartao";
+  else if (metodoBruto.includes("boleto"))                               meioPagamento = "boleto";
+  else if (metodoBruto)                                                   meioPagamento = metodoBruto;
+
+  console.log(`[webhook] meio_pagamento="${meioPagamento}" (bruto="${metodoBruto}")`);
+
   // ── COMPRA APROVADA ─────────────────────────────────────────────────────────
   if (["order_approved", "order.approved"].includes(tipo)) {
     const userId = await buscarUserId(email);
@@ -345,6 +362,7 @@ export default async function handler(req, res) {
       data_inicio:            new Date().toISOString(),
       data_expiracao:         expiracaoEm(meses),
       updated_at:             new Date().toISOString(),
+      ...(meioPagamento ? { meio_pagamento: meioPagamento } : {}),
       ...(userId ? { user_id: userId } : {}),
     };
 
