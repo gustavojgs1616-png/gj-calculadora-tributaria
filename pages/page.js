@@ -738,30 +738,59 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════
-          STATS
+          TICKER / MARQUEE
       ══════════════════════════════════ */}
-      <section style={{ borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", background: "#eaf5fd", padding: "28px 0" }}>
-        <div className="lp" style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: 0 }}>
-          {[
-            { n: "100+", label: "contadores ativos", icon: "👨‍💼" },
-            { n: "13", label: "ferramentas no hub", icon: "🛠️" },
-            { n: "30s", label: "por simulação", icon: "⚡" },
-            { n: "7d", label: "garantia total", icon: "🛡️" },
-            { n: "2026", label: "tabelas atualizadas", icon: "📅" },
-          ].map((s, i, arr) => (
-            <div key={s.label} style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ textAlign: "center", padding: "0 32px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>
-                  <span style={{ fontSize: 16 }}>{s.icon}</span>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: "#DF9F20", lineHeight: 1 }}>{s.n}</span>
+      <section style={{ borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", background: "#0d1545", padding: "18px 0", overflow: "hidden" }}>
+        <style>{`
+          @keyframes ticker {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: ticker 32s linear infinite;
+          }
+          .ticker-track:hover { animation-play-state: paused; }
+        `}</style>
+        <div style={{ overflow: "hidden", width: "100%" }}>
+          <div className="ticker-track">
+            {[
+              { valor: "100+",   texto: "Contadores Ativos" },
+              { valor: "13",     texto: "Ferramentas no Hub" },
+              { valor: "30s",    texto: "Por Simulação" },
+              { valor: "7 dias", texto: "Garantia Total" },
+              { valor: "2026",   texto: "Tabelas Atualizadas" },
+              { valor: "3",      texto: "Regimes Tributários" },
+              { valor: "100%",   texto: "Online, sem instalar" },
+              { valor: "PDF",    texto: "em todos os relatórios" },
+              { valor: "24/7",   texto: "Disponível" },
+              { valor: "LC 214", texto: "Reforma Tributária" },
+              // duplicado para loop perfeito
+              { valor: "100+",   texto: "Contadores Ativos" },
+              { valor: "13",     texto: "Ferramentas no Hub" },
+              { valor: "30s",    texto: "Por Simulação" },
+              { valor: "7 dias", texto: "Garantia Total" },
+              { valor: "2026",   texto: "Tabelas Atualizadas" },
+              { valor: "3",      texto: "Regimes Tributários" },
+              { valor: "100%",   texto: "Online, sem instalar" },
+              { valor: "PDF",    texto: "em todos os relatórios" },
+              { valor: "24/7",   texto: "Disponível" },
+              { valor: "LC 214", texto: "Reforma Tributária" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 36px", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: "#DF9F20", letterSpacing: "-0.01em" }}>
+                    {item.valor}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#94a3b8", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+                    {item.texto}
+                  </span>
                 </div>
-                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</div>
+                <span style={{ color: "#DF9F2050", fontSize: 18, flexShrink: 0 }}>◆</span>
               </div>
-              {i < arr.length - 1 && (
-                <div style={{ width: 1, height: 36, background: "#cbd5e1", flexShrink: 0 }} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
