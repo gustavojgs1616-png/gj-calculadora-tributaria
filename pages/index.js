@@ -106,14 +106,14 @@ export default function LoginPage() {
               GJ Hub Contábil
             </h1>
             <p style={{ fontSize: 16, color: "#6670B8", lineHeight: 1.7 }}>
-              Compare Simples Nacional, Lucro Presumido e Lucro Real em segundos. Descubra qual regime gera mais economia para sua empresa.
+              12 ferramentas para o contador moderno. Simule, calcule, gere documentos e se prepare para a Reforma Tributária — tudo em um só lugar.
             </p>
           </div>
           {[
-            { icon: "⚖️", text: "Comparação dos 3 regimes tributários" },
-            { icon: "📄", text: "Relatório PDF profissional" },
-            { icon: "📊", text: "Histórico de simulações" },
-            { icon: "💰", text: "Calcule a economia real" },
+            { icon: "🧮", text: "Simulador Tributário com PDF em 30s" },
+            { icon: "📄", text: "Gerador de documentos e contratos" },
+            { icon: "📅", text: "Calendário fiscal sempre atualizado" },
+            { icon: "🎓", text: "Simulado CFC com gabarito comentado" },
           ].map((f) => (
             <div key={f.text} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div style={{

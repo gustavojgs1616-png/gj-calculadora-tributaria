@@ -8,7 +8,7 @@ import { useAssinatura } from "../lib/AssinaturaContext";
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const { pode } = useAssinatura();
+  const { pode, planoEfetivo } = useAssinatura();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -30,19 +30,26 @@ export default function HomePage() {
 
   const modulos = [
     {
-      id: "simulador",
-      label: "Simulador Tributário",
-      desc: "Compare Simples Nacional, Lucro Presumido e Lucro Real. Descubra o regime mais vantajoso e acesse seu histórico de simulações.",
-      cor: "var(--primary)",
-      badge: "Mais usado",
-      rota: "/calculadora",
-    },
-    {
       id: "noticias",
       label: "Portal de Notícias",
       desc: "Notícias contábeis, fiscais e tributárias em tempo real. Reforma tributária, Simples Nacional, CFC e muito mais.",
       cor: "#3b82f6",
       rota: "/noticias",
+    },
+    {
+      id: "vagas",
+      label: "Vagas de Contabilidade",
+      desc: "Busque vagas de contabilidade no LinkedIn, Catho, Indeed, Gupy e mais. Filtre por cargo e estado em todo o Brasil.",
+      cor: "#22c55e",
+      badge: "NOVO",
+      rota: "/vagas",
+    },
+    {
+      id: "simulador",
+      label: "Simulador Tributário",
+      desc: "Compare Simples Nacional, Lucro Presumido e Lucro Real. Descubra o regime mais vantajoso e acesse seu histórico de simulações.",
+      cor: "var(--primary)",
+      rota: "/calculadora",
     },
     {
       id: "fiscal",
@@ -81,17 +88,10 @@ export default function HomePage() {
     },
     {
       id: "icmsst",
-      label: "ICMS Interestadual",
+      label: "Cálculo do ICMS-ST",
       desc: "Calcule ICMS-ST e DIFAL em operações interestaduais com MVA ajustada, alíquotas automáticas e relatório em PDF.",
       cor: "#818cf8",
       rota: "/icmsst",
-    },
-    {
-      id: "simulado",
-      label: "Simulado CFC",
-      desc: "Simule o Exame de Suficiência com questões reais das últimas edições. Resultado detalhado por área com gabarito comentado.",
-      cor: "#DF9F20",
-      rota: "/simulado",
     },
     {
       id: "reforma",
@@ -100,6 +100,13 @@ export default function HomePage() {
       cor: "#DF9F20",
       destaque: true,
       rota: "/reforma",
+    },
+    {
+      id: "simulado",
+      label: "Simulado CFC",
+      desc: "Simule o Exame de Suficiência com questões reais das últimas edições. Resultado detalhado por área com gabarito comentado.",
+      cor: "#DF9F20",
+      rota: "/simulado",
     },
     {
       id: "irpf",
@@ -129,6 +136,138 @@ export default function HomePage() {
               Bem-vindo ao <strong style={{ color: "var(--text)" }}>GJ Hub Contábil</strong> — o hub completo para contadores.
             </p>
           </div>
+
+          {/* ── Banner Upgrade — visível apenas para plano Free ── */}
+          {planoEfetivo === "free" && (
+            <div style={{
+              background: "linear-gradient(135deg, #0d0a2e 0%, #13103d 50%, #0d0a2e 100%)",
+              border: "1px solid #808CFF50",
+              borderRadius: 16,
+              padding: "20px 22px",
+              marginBottom: 22,
+              boxShadow: "0 4px 40px rgba(128,140,255,0.15)",
+              position: "relative",
+              overflow: "hidden",
+            }}>
+              {/* Brilho de fundo decorativo */}
+              <div style={{
+                position: "absolute", top: -40, right: -40,
+                width: 180, height: 180, borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(128,140,255,0.12) 0%, transparent 70%)",
+                pointerEvents: "none",
+              }} />
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                  {/* Ícone */}
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                    background: "linear-gradient(135deg, #808CFF22, #5b67d822)",
+                    border: "1px solid #808CFF40",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                  }}>🚀</div>
+
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "#F5F6FF" }}>
+                        Você está no plano gratuito
+                      </span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, color: "#000",
+                        background: "linear-gradient(135deg, #808CFF, #5b67d8)",
+                        padding: "2px 8px", borderRadius: 20, letterSpacing: "0.05em",
+                      }}>FREE</span>
+                    </div>
+                    <p style={{ fontSize: 13, color: "#9098C8", margin: 0, lineHeight: 1.5 }}>
+                      Desbloqueie o Simulador Tributário, Gerador de Documentos, Rescisão, Reforma Tributária e muito mais.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botão CTA */}
+                <button
+                  onClick={() => router.push("/assinatura")}
+                  style={{
+                    background: "linear-gradient(135deg, #808CFF, #5b67d8)",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "11px 22px",
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    boxShadow: "0 4px 20px rgba(128,140,255,0.4)",
+                  }}
+                >
+                  Ver planos →
+                </button>
+              </div>
+
+              {/* Ferramentas bloqueadas em pills */}
+              <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
+                {[
+                  "📊 Simulador Tributário",
+                  "📅 Calendário Fiscal",
+                  "💰 Precificação Contábil",
+                  "🔍 Consulta Fiscal",
+                  "📄 Gerador de Documentos",
+                  "👔 Rescisão Trabalhista",
+                  "🏛️ Cálculo do ICMS-ST",
+                  "🔄 Reforma Tributária",
+                  "🎓 Simulado CFC",
+                  "🧾 Simulador IRPF",
+                  "💼 Vagas de Contabilidade",
+                ].map((f) => (
+                  <span key={f} style={{
+                    background: "rgba(128,140,255,0.08)",
+                    border: "1px solid #808CFF25",
+                    borderRadius: 20,
+                    padding: "3px 10px",
+                    fontSize: 11,
+                    color: "#808CFF",
+                    display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                    🔒 {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Botão Admin — visível apenas para gustavo_jgs@hotmail.com */}
+          {user?.email === "gustavo_jgs@hotmail.com" && (
+            <div
+              onClick={() => router.push("/admin")}
+              style={{
+                background: "linear-gradient(135deg, #0a0e3a, #12185a)",
+                border: "1px solid #808CFF40",
+                borderRadius: 12,
+                padding: "14px 18px",
+                marginBottom: 20,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 4px 20px rgba(128,140,255,0.1)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: "#808CFF22", border: "1px solid #808CFF44",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                }}>⚙️</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#F5F6FF" }}>Painel Administrativo</div>
+                  <div style={{ fontSize: 12, color: "#6670B8", marginTop: 1 }}>Usuários, planos e métricas do hub</div>
+                </div>
+              </div>
+              <span style={{ color: "#808CFF", fontSize: 18 }}>→</span>
+            </div>
+          )}
 
           {/* Banner — Reforma Tributária */}
           {pode && pode("reforma") && (

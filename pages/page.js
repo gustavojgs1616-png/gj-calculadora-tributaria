@@ -470,7 +470,7 @@ function DemoSection() {
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#DF9F20", letterSpacing: "0.1em", marginBottom: 14, textTransform: "uppercase" }}>Veja o produto por dentro</div>
           <h2 style={{ fontSize: 36, fontWeight: 900, color: "#F5F6FF", lineHeight: 1.2 }}>
-            12 ferramentas. <span style={{ color: "#DF9F20" }}>Um único lugar.</span>
+            13 ferramentas. <span style={{ color: "#DF9F20" }}>Um único lugar.</span>
           </h2>
         </div>
 
@@ -531,7 +531,7 @@ export default function LandingPage() {
     <>
       <Head>
         <title>GJ Hub Contábil — O hub completo para o contador moderno</title>
-        <meta name="description" content="12 ferramentas para contadores: simulador tributário, calendário fiscal, precificação contábil, rescisão trabalhista e muito mais." />
+        <meta name="description" content="13 ferramentas para contadores: simulador tributário, calendário fiscal, precificação contábil, rescisão trabalhista e muito mais." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         {/* Favicon */}
@@ -542,7 +542,7 @@ export default function LandingPage() {
 
         {/* Open Graph — thumbnail ao compartilhar */}
         <meta property="og:title" content="GJ Hub Contábil — Tudo do contador na sua mão" />
-        <meta property="og:description" content="12 ferramentas para contadores: simulador tributário, rescisão, honorários, ICMS, IRPF e muito mais. Tabelas 2026 sempre atualizadas." />
+        <meta property="og:description" content="13 ferramentas para contadores: simulador tributário, rescisão, honorários, ICMS, IRPF e muito mais. Tabelas 2026 sempre atualizadas." />
         <meta property="og:image" content="https://pro.gjtreinamentoscontabeis.com/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -553,7 +553,7 @@ export default function LandingPage() {
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="GJ Hub Contábil — Tudo do contador na sua mão" />
-        <meta name="twitter:description" content="12 ferramentas para contadores com tabelas 2026 sempre atualizadas." />
+        <meta name="twitter:description" content="13 ferramentas para contadores com tabelas 2026 sempre atualizadas." />
         <meta name="twitter:image" content="https://pro.gjtreinamentoscontabeis.com/og-image.png" />
 
         {/* ── Meta Pixel ── */}
@@ -743,7 +743,7 @@ export default function LandingPage() {
         <div className="lp" style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: 0 }}>
           {[
             { n: "100+", label: "contadores ativos", icon: "👨‍💼" },
-            { n: "12", label: "ferramentas no hub", icon: "🛠️" },
+            { n: "13", label: "ferramentas no hub", icon: "🛠️" },
             { n: "30s", label: "por simulação", icon: "⚡" },
             { n: "7d", label: "garantia total", icon: "🛡️" },
             { n: "2026", label: "tabelas atualizadas", icon: "📅" },
@@ -855,7 +855,7 @@ export default function LandingPage() {
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#DF9F20", letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" }}>O que está incluído</div>
             <h2 style={{ fontSize: 30, fontWeight: 900, color: "#0d1545", lineHeight: 1.2 }}>
-              12 ferramentas feitas por quem<br />entende a sua rotina.
+              13 ferramentas feitas por quem<br />entende a sua rotina.
             </h2>
             <p style={{ fontSize: 15, color: "#4a5568", marginTop: 12 }}>Desenvolvidas para a realidade do contador brasileiro, com tabelas sempre atualizadas.</p>
           </div>
@@ -863,6 +863,7 @@ export default function LandingPage() {
           <div className="lp-grid-3">
             {[
               { icon: "📰", label: "Portal de Notícias", desc: "Reforma tributária, Simples Nacional, CFC e obrigações fiscais em tempo real.", plano: "Free", cor: "#64748b" },
+              { icon: "🎓", label: "Central de Ajuda", desc: "Tutoriais e guias para usar todas as ferramentas do hub. Disponível para todos os planos, inclusive Free.", plano: "Free", cor: "#64748b" },
               { icon: "🧮", label: "Simulador Tributário", desc: "Compare Simples Nacional, Lucro Presumido e Lucro Real em 30 segundos. Gere relatório em PDF.", plano: "Starter", cor: "#16a34a" },
               { icon: "📅", label: "Calendário Fiscal", desc: "FGTS, DAS, IRRF, DCTF, PIS/COFINS — todas as obrigações do mês em um só lugar.", plano: "Starter", cor: "#16a34a" },
               { icon: "💼", label: "Vagas de Contabilidade", desc: "Busque vagas em tempo real no LinkedIn, Catho, Indeed, Gupy e mais. Filtre por cargo e estado.", plano: "Starter", cor: "#16a34a", novo: true },
