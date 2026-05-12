@@ -651,11 +651,8 @@ export default function LandingPage() {
           .lp { padding: 0 16px; }
           .lp-grid-3 { grid-template-columns: 1fr; }
           .lp-grid-2 { grid-template-columns: 1fr; }
-          .lp-hero-h { font-size: 26px !important; white-space: normal !important; }
-          .hero-br-desktop { display: none; }
-          .hero-br-mobile { display: block; }
-          .hero-no-que { display: none; }
-          .hero-no-que-mobile { display: inline; }
+          .lp-hero-h { font-size: 26px !important; }
+          .hero-br { display: none; }
           .lp-steps { grid-template-columns: 1fr 1fr !important; }
           .lp-btn-gold { width: 100%; text-align: center; padding: 14px 20px; font-size: 15px; }
         }
@@ -713,14 +710,8 @@ export default function LandingPage() {
           </div>
 
           <h1 className="lp-hero-h" style={{ fontSize: 44, fontWeight: 900, color: "#0d1545", lineHeight: 1.2, maxWidth: 960, margin: "0 auto 20px", textAlign: "center" }}>
-            {/* Desktop: "Contador, você ainda perde horas no que" / "deveria levar minutos?" */}
-            {/* Mobile:  "Contador, você ainda perde horas" / "no que deveria levar minutos?" */}
-            Contador, você ainda perde horas<span className="hero-no-que"> no que</span>
-            <br className="hero-br-desktop" style={{}} />
-            <br className="hero-br-mobile" style={{ display: "none" }} />
-            <span style={{ color: "#DF9F20" }}>
-              <span className="hero-no-que-mobile" style={{ display: "none" }}>no que </span>deveria levar minutos?
-            </span>
+            Contador, você ainda perde horas no que<br className="hero-br" />
+            <span style={{ color: "#DF9F20" }}>deveria levar minutos?</span>
           </h1>
 
           <p style={{ fontSize: 17, color: "#4a5568", lineHeight: 1.75, maxWidth: 560, margin: "0 auto 36px" }}>
