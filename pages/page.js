@@ -708,9 +708,8 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 className="lp-hero-h" style={{ fontSize: 44, fontWeight: 900, color: "#0d1545", lineHeight: 1.15, maxWidth: 760, margin: "0 auto 20px" }}>
-            Contador, você ainda perde horas no que<br />
-            <span style={{ color: "#DF9F20" }}>deveria levar minutos?</span>
+          <h1 className="lp-hero-h" style={{ fontSize: 44, fontWeight: 900, color: "#0d1545", lineHeight: 1.2, maxWidth: 960, margin: "0 auto 20px", whiteSpace: "pre-line" }}>
+            {"Contador, você ainda perde horas no que\n"}<span style={{ color: "#DF9F20" }}>deveria levar minutos?</span>
           </h1>
 
           <p style={{ fontSize: 17, color: "#4a5568", lineHeight: 1.75, maxWidth: 560, margin: "0 auto 36px" }}>
